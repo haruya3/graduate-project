@@ -1,0 +1,5 @@
+__pycache__
+.env
+venv
+my_google/credentials.json
+ditection_data

@@ -1,0 +1,45 @@
+from dataclasses import field
+from my_google.auth import Auth
+from my_google.my_drive.module import *
+from googleapiclient.errors import HttpError as HttpError
+from dotenv import load_dotenv
+load_dotenv()
+import os
+
+def main(date):
+    #グーグルサービスクライアント初期化
+    SCOPES = [os.getenv('SCOPE')]
+    GOOGLE_SECRET_PATH = os.getenv('GOOGLE_SECRET_PATH')
+    drive = Auth(SCOPES, GOOGLE_SECRET_PATH, 'drive', 'v3')
+
+    download_ditection_data(drive, str(date))
+
+
+#TODO: nextPageを実装する。今のところ日付ごとのデータを取得するのでそんなに多くなるつもりはないが。
+def download_ditection_data(drive, date):
+    condition_list = [
+        f"fullText contains '{date}'",
+        "fullText contains 'logicIndexData'"
+    ]
+    condition = " and ".join(condition_list)
+    fields = "nextPageToken, files(id, name)"
+
+    files = search_file(drive, condition, fields)
+
+    for file in files:
+        first_splited_name = file['name'].split('_')
+        date_time = first_splited_name[0]
+        download_file_path = f"ditection_data/{date_time}_logicIndexData.csv"
+
+        download_file(drive, file['id'], download_file_path)
+
+#TODO:-dオプションのバリデーションが緩すぎる。日付型にした方がいいかな
+def set_args():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-d","--date", help="いつのデータを取得するか指定する", type=int)
+    return parser.parse_args()
+
+if __name__ == '__main__':
+    args = set_args()
+    main(args.date)

@@ -27,8 +27,8 @@ def download_ditection_data(drive, date):
     files = search_file(drive, condition, fields)
 
     for file in files:
-        first_splited_name = file['name'].split('_')
-        date_time = first_splited_name[0]
+        splited_name = file['name'].split('_')
+        date_time = splited_name[0]
         download_file_path = f"ditection_data/{date_time}_logicIndexData.csv"
 
         download_file(drive, file['id'], download_file_path)
@@ -39,7 +39,7 @@ def set_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-d","--date", help="いつのデータを取得するか指定する", type=int)
     return parser.parse_args()
-
+#TODO: Jins memeは眼鏡の置き方をミスるとデータ取得されちゃうので欲しい時間までを指定できるようにした方が良いかも
 if __name__ == '__main__':
     args = set_args()
     main(args.date)

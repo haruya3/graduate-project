@@ -14,8 +14,6 @@ def main(date):
 
     download_ditection_data(drive, str(date))
 
-
-#TODO: nextPageを実装する。今のところ日付ごとのデータを取得するのでそんなに多くなるつもりはないが。
 def download_ditection_data(drive, date):
     condition_list = [
         f"fullText contains '{date}'",
@@ -33,7 +31,8 @@ def download_ditection_data(drive, date):
 
         download_file(drive, file['id'], download_file_path)
 
-#TODO:-dオプションのバリデーションが緩すぎる。日付型にした方がいいかな
+#TODO:--wオプションのバリデーションが緩すぎる。日付型にした方がいいかな
+#TODO: ドライブ内の特定のファイルのダウンロードオプションとデリートオプションを設ける
 def set_args():
     import argparse
     parser = argparse.ArgumentParser()

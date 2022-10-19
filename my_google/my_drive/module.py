@@ -4,11 +4,30 @@ from googleapiclient.http import MediaIoBaseDownload
 
 def search_file(drive, condition, fields):
     try:
-        result = drive.client.files().list(
-            q=condition,
-            fields=fields,
-        ).execute()
-        return result.get('files', [])
+        files = []
+        next_page_token = None
+        page_size = 100
+        limit_count = 0
+
+        while True:
+            limit_count += 1
+            result = drive.client.files().list(
+                q=condition,
+                fields=fields,
+                pageSize=page_size,
+                pageToken=next_page_token
+            ).execute()
+
+            next_page_token = result.get('nextPageToken', None)
+            if next_page_token is None:
+                break            
+            if limit_count == 10:
+                print(f'過剰なリクエストです。時間を置いて再度リクエストしてください。')
+            
+            print(f'最低リクエスト数: {limit_count * page_size}')
+            
+            files.extend(result.get('files', []))
+        return files
 
     except HttpError as error:
         print(f'An error occurred: {error}')

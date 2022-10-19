@@ -37,9 +37,10 @@ def download_ditection_data(drive, date):
 def set_args():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d","--date", help="いつのデータを取得するか指定する", type=int)
+    parser.add_argument("-w","--when", help="いつのデータを取得するか指定する", type=int)
     return parser.parse_args()
+
 #TODO: Jins memeは眼鏡の置き方をミスるとデータ取得されちゃうので欲しい時間までを指定できるようにした方が良いかも
 if __name__ == '__main__':
     args = set_args()
-    main(args.date)
+    main(args.when)

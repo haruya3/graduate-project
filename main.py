@@ -1,5 +1,3 @@
-from dataclasses import field
-from select import select
 from my_google.auth import Auth
 from my_google.my_drive.module import *
 from googleapiclient.errors import HttpError as HttpError
@@ -10,8 +8,9 @@ import os
 def main(date, download_flag, delete_flag):
     #グーグルサービスクライアント初期化
     SCOPES = [os.getenv('SCOPE')]
-    GOOGLE_SECRET_PATH = os.getenv('GOOGLE_SECRET_PATH')
-    drive = Auth(SCOPES, GOOGLE_SECRET_PATH, 'drive', 'v3')
+    OAUTH_SECRET_PATH = os.getenv('OAUTH_SECRET_PATH')
+    CLIENT_SECRET_ID_PATH = os.getenv('CLIENT_SECRET_ID_PATH')
+    drive = Auth(SCOPES, OAUTH_SECRET_PATH, CLIENT_SECRET_ID_PATH, 'drive', 'v3')
 
     if(download_flag):
         download_ditection_data(drive, str(date))

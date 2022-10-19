@@ -1,5 +1,7 @@
 __pycache__
 .env
 venv
-my_google/credentials.json
 ditection_data
+my_google/credentials.json
+my_google/service_acount_credentials.json
+my_google/client_secret_id_path.json

@@ -33,7 +33,6 @@ def download_ditection_data(drive, date):
 
         download_file(drive, file['id'], download_file_path)
 
-#TODO:--wオプションのバリデーションが緩すぎる。日付型にした方がいいかな
 #TODO: ドライブ内の特定のファイルのダウンロードオプションとデリートオプションを設ける
 def set_args():
     import argparse
@@ -53,7 +52,6 @@ def check_google_drive_action(*actions):
         print('Google Dirveへの操作オプションの指定は一つしかできません。')
         exit()
 
-#TODO: Jins memeは眼鏡の置き方をミスるとデータ取得されちゃうので欲しい時間までを指定できるようにした方が良いかも
 if __name__ == '__main__':
     args = set_args()
     check_google_drive_action(args.download, args.delete)

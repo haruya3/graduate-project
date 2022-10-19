@@ -7,8 +7,6 @@ import os
 class Auth:
     def __init__(self, scope, secret_path, client_secret_id_path, service, version):
         credentials = self.OAuth(scope, secret_path, client_secret_id_path)
-        #sarvice_acount_credentials = service_account.Credentials.from_service_account_file(secret_path)
-        #scoped_creds = sarvice_acount_credentials.with_scopes(scope)
         self.client = build(service, version, credentials=credentials)
     
     def OAuth(self, scope, secret_path, client_secret_id_path):

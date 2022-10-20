@@ -22,16 +22,9 @@ def main(date, download_flag, delete_flag):
 
 #Google Driveの特定のフォルダのファイルの取得
 def download_ditection_data(drive, date, keyword):
-    folder_id = os.getenv('FOLDER_ID')
-    condition_list = [
-        f"'{folder_id}' in parents",
-        f"fullText contains '{date}'",
-        f"fullText contains '{keyword}'"
-    ]
-    condition = " and ".join(condition_list)
-    fields = "nextPageToken, files(id, name)"
+    params = search_file_ready(date, keyword)
 
-    files = search_file(drive, condition, fields)
+    files = search_file(drive, params['condition'], params['fields'])
 
     if files:
         for file in files:
@@ -43,15 +36,8 @@ def download_ditection_data(drive, date, keyword):
 
 #Google Driveの特定のフォルダのファイルの削除
 def delete_ditection_data(drive, date):
-    folder_id = os.getenv('FOLDER_ID')
-    condition_list = [
-        f"'{folder_id}' in parents",
-        f"fullText contains '{date}'",
-    ]
-    condition = " and ".join(condition_list)
-    fields = "nextPageToken, files(id, name)"
-
-    files = search_file(drive, condition, fields)
+    params = search_file_ready(date, all_flag=True)
+    files = search_file(drive, params['condition'], params['fields'])
 
     if files:
         for file in files:
@@ -59,6 +45,20 @@ def delete_ditection_data(drive, date):
         
         print(f'{date}についての{len(files)}個のファイルの削除が完了しました。')
 
+def search_file_ready(date, keyword=None, all_flag=False):
+    folder_id = os.getenv('FOLDER_ID')
+    condition_list = [
+        f"'{folder_id}' in parents",
+        f"fullText contains '{date}'",
+        f"fullText contains '{keyword}'"
+    ]
+    if all_flag:
+        condition_list.pop()
+        
+    condition = " and ".join(condition_list)
+    fields = "nextPageToken, files(id, name)"
+    
+    return {'condition': condition, 'fields': fields}
 
 #TODO: ドライブ内の特定のファイルのダウンロードオプションとデリートオプションを設ける
 def set_args():

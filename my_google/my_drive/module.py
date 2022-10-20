@@ -29,8 +29,7 @@ def search_file(drive, condition, fields):
 
             if next_page_token is None:
                 break
-        print(files)
-
+            
         return files
 
     except HttpError as error:

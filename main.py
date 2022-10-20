@@ -12,25 +12,53 @@ def main(date, download_flag, delete_flag):
     CLIENT_SECRET_ID_PATH = os.getenv('CLIENT_SECRET_ID_PATH')
     drive = Auth(SCOPES, OAUTH_SECRET_PATH, CLIENT_SECRET_ID_PATH, 'drive', 'v3')
 
-    if(download_flag):
-        download_ditection_data(drive, str(date))
+    keyword = 'logicIndexData'
 
-def download_ditection_data(drive, date):
+    if(download_flag):
+        download_ditection_data(drive, str(date), keyword)
+
+    if(delete_flag):
+        delete_ditection_data(drive, str(date))
+
+#Google Driveの特定のフォルダのファイルの取得
+def download_ditection_data(drive, date, keyword):
+    params = search_file_ready(date, keyword)
+
+    files = search_file(drive, params['condition'], params['fields'])
+
+    if files:
+        for file in files:
+            splited_name = file['name'].split('_')
+            date_time = splited_name[0]
+            download_file_path = f"ditection_data/{date_time}_logicIndexData.csv"
+
+            download_file(drive, file['id'], download_file_path)
+
+#Google Driveの特定のフォルダのファイルの削除
+def delete_ditection_data(drive, date):
+    params = search_file_ready(date, all_flag=True)
+    files = search_file(drive, params['condition'], params['fields'])
+
+    if files:
+        for file in files:
+            delete_file(drive, file['id'])
+        
+        print(f'{date}についての{len(files)}個のファイルの削除が完了しました。')
+
+def search_file_ready(date, keyword=None, all_flag=False):
+    folder_id = os.getenv('FOLDER_ID')
     condition_list = [
+        f"'{folder_id}' in parents",
         f"fullText contains '{date}'",
-        "fullText contains 'logicIndexData'"
+        f"fullText contains '{keyword}'"
     ]
+    if all_flag:
+        condition_list.pop()
+        
     condition = " and ".join(condition_list)
     fields = "nextPageToken, files(id, name)"
-
-    files = search_file(drive, condition, fields)
-
-    for file in files:
-        splited_name = file['name'].split('_')
-        date_time = splited_name[0]
-        download_file_path = f"ditection_data/{date_time}_logicIndexData.csv"
-
-        download_file(drive, file['id'], download_file_path)
+    
+    return {'condition': condition, 'fields': fields}
 
 #TODO: ドライブ内の特定のファイルのダウンロードオプションとデリートオプションを設ける
 def set_args():

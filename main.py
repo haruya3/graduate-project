@@ -1,3 +1,4 @@
+from venv import create
 from my_google.auth import Auth
 from my_google.my_drive.module import *
 from googleapiclient.errors import HttpError as HttpError
@@ -5,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 import os
 
-def main(date, download_flag, delete_flag):
+def main(date, download_flag, delete_flag, create_flag):
     #グーグルサービスクライアント初期化
     SCOPES = [os.getenv('SCOPE')]
     OAUTH_SECRET_PATH = os.getenv('OAUTH_SECRET_PATH')
@@ -19,6 +20,9 @@ def main(date, download_flag, delete_flag):
 
     if(delete_flag):
         delete_ditection_data(drive, str(date))
+
+    if(create_flag):
+        create_graph_from_ditection_data_ready()
 
 #Google Driveの特定のフォルダのファイルの取得
 def download_ditection_data(drive, date, keyword):
@@ -45,6 +49,10 @@ def delete_ditection_data(drive, date):
         
         print(f'{date}についての{len(files)}個のファイルの削除が完了しました。')
 
+#download_ditection_dataで取得したデータからグラフを作成するための準備
+def create_graph_from_ditection_data_ready():
+    print("成功")
+
 def search_file_ready(date, keyword=None, all_flag=False):
     folder_id = os.getenv('FOLDER_ID')
     condition_list = [
@@ -65,8 +73,9 @@ def set_args():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("-w", "--when", help="いつのデータを取得するか指定する。形式: (yyyymmdd)", type=int, required=True)
-    parser.add_argument("-d", "--download", help="ダウンロード", action='store_true')
-    parser.add_argument("-D", "--delete", help="いつのデータを取得するか指定する", action='store_true')
+    parser.add_argument("-d", "--download", help="データを取得する", action='store_true')
+    parser.add_argument("-D", "--delete", help="データを削除する", action='store_true')
+    parser.add_argument("-c", "--create", help="取得したデータからグラフを作成する", action='store_true')
     return parser.parse_args()
 
 def check_google_drive_action(*actions):
@@ -81,6 +90,6 @@ def check_google_drive_action(*actions):
 
 if __name__ == '__main__':
     args = set_args()
-    check_google_drive_action(args.download, args.delete)
+    check_google_drive_action(args.download, args.delete, args.create)
 
-    main(args.when, args.download, args.delete)
+    main(args.when, args.download, args.delete, args.create)

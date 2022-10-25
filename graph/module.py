@@ -38,7 +38,7 @@ def create_graph_from_ditection_data_ready(date, hours):
                 start_vdt_minitue = int(date_blink_interval_time_per_hour_data[0][0][0][14:16])
 
             #VDT作業開始時間
-            for index, per_minitue_data in enumerate(date_blink_interval_time_per_hour_data):
+            for per_minitue_data in date_blink_interval_time_per_hour_data:
                 blink_interval_time_average = 0
                 blink_interval_time_sum = 0
                 minute = per_minitue_data[0][0][14:16]

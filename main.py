@@ -16,16 +16,16 @@ def main(date, download_flag, delete_flag, create_flag):
     keyword = 'logicIndexData'
 
     if(download_flag):
-        download_ditection_data(drive, str(date), keyword)
+        download_ditection_data_flow(drive, str(date), keyword)
 
     if(delete_flag):
-        delete_ditection_data(drive, str(date))
+        delete_ditection_data_flow(drive, str(date))
 
     if(create_flag):
-        create_graph_from_ditection_data(str(date))
+        create_graph_from_ditection_data_flow(str(date))
 
 """ Google Driveの特定のフォルダのファイルの取得 """
-def download_ditection_data(drive, date, keyword):
+def download_ditection_data_flow(drive, date, keyword):
     params = search_file_ready(date, keyword)
 
     files = search_file(drive, params['condition'], params['fields'])
@@ -41,7 +41,7 @@ def download_ditection_data(drive, date, keyword):
         print("指定した条件に一致するファイルは見つかりませんでいた。")
 
 """ Google Driveの特定のフォルダのファイルの削除 """
-def delete_ditection_data(drive, date):
+def delete_ditection_data_flow(drive, date):
     params = search_file_ready(date, all_flag=True)
     files = search_file(drive, params['condition'], params['fields'])
 
@@ -53,7 +53,7 @@ def delete_ditection_data(drive, date):
 
 
 """ Jins memeのデータでグラフ作成 """
-def create_graph_from_ditection_data(date):
+def create_graph_from_ditection_data_flow(date):
     hours = list(map(lambda x: int(x), input("時間範囲を指定してください(例)12時から15時なら12-15, 1時なら01とする\n").split('-')))
     result = create_graph_from_ditection_data_ready(date, hours)
     print(result)

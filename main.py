@@ -57,6 +57,7 @@ def create_graph_from_ditection_data(date):
     hours = list(map(lambda x: int(x), input("時間範囲を指定してください(例)12時から15時なら12-15, 1時なら01とする\n").split('-')))
     result = create_graph_from_ditection_data_ready(date, hours)
     print(result)
+    #df = pd.DataFrame() グラフ作成のためのオブジェクト作成
 
 """ Google Drive APIで特定ファイル検索する際の条件(q, fieldsなど)に指定する値の準備 """
 def search_file_ready(date, keyword=None, all_flag=False):

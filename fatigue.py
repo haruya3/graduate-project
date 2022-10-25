@@ -7,7 +7,7 @@ def main():
         now_time = datetime.datetime.now()
         pass_time = now_time.minute - start_time.minute
     
-        if pass_time != 0 and pass_time % 1 == 0:
+        if pass_time != 0 and pass_time % 5 == 0:
             messagebox.showinfo('入力通知','1分以内に被験者の疲労度を入力してください')
             #TODO:入力のバリデーションしてないから余裕あればやる
             fatigue = input("被験者の疲労度を入力してください(終了するにはexitと打ってください)\n")

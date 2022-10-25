@@ -2,5 +2,6 @@ __pycache__
 .env
 venv
 ditection_data
+fatigue_data
 my_google/token.json
 my_google/client_secret_id_path.json

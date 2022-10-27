@@ -11,7 +11,7 @@ python main.py -h
 ```bash
 python main.py -w yyyymmdd -d
 ```
-どのデータを取得したいかは、日付の指定までならできる。時間の指定まではできない。また、`logicIndexData`か`summaryData`かは`main.py`にある`keyword`変数で変更できる。
+どのデータを取得したいかは、日付の指定までならできる。時間の指定まではできない。また、`logicIndexData`か`summaryData`かは`main.py`にある`jins_meme_data_name`変数で変更できる。
 今のところは、`summaryData`しか使う予定はない。
 
 ## Google Driveからデータを削除

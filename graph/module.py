@@ -1,6 +1,7 @@
 import glob, os, re
 import pandas as pd
 import matplotlib.pyplot as plt
+from file_operation.module import *
 
 def create_graph_from_ditection_data(alt_date, result, colums):
     plt.rcParams['font.family'] = 'Meiryo'
@@ -38,7 +39,7 @@ def create_graph_from_ditection_data(alt_date, result, colums):
 
 
 #download_ditection_dataで取得したデータからグラフを作成するための準備
-def create_graph_from_ditection_data_ready(alt_date, hours, colums, keywords):
+def create_graph_from_ditection_data_ready(alt_date, hours, colums, jins_meme_data_name):
     year, month, day = get_date(alt_date)
 
     #(例)[[X1(VDT作業開始からの経過時間(5分ごと)) Y1(瞬目の間隔時間平均(5分ごと)) Z1(疲労度申告(5分ごと))], [X2 Y2 Z1],...[Xn Yn Zn]], 全てint型。
@@ -50,11 +51,12 @@ def create_graph_from_ditection_data_ready(alt_date, hours, colums, keywords):
     
     #1時間ごとにデータ(date_blink_interval_time_fatigue_data)を取得していく->hours[-1]とすることで配列要素1つだけの時エラー回避
     for hour in range(hours[0], hours[-1] + 1):
-        target_pathes = glob.glob(f'./ditection_data/{year}/{month}/{day}/{hour}/*summaryData.csv')
+        target_pathes = glob.glob(f'./ditection_data/{year}/{month}/{day}/{hour}/*{jins_meme_data_name}.csv')
 
         date_blink_interval_time_per_hour_data = []
 
         if target_pathes:
+            #ひとつずつcsvファイルの中身を取得する
             for path in target_pathes:
                 #空ファイルは無視する
                 if os.path.getsize(path) != 0:
@@ -64,7 +66,7 @@ def create_graph_from_ditection_data_ready(alt_date, hours, colums, keywords):
         else:
             print("指定したファイルは存在しません。恐らく時間指定を間違っているかそのようなファイルパスは存在しません。")
             
-        # 一つの配列はcsvファイルでいう一つの行レコードとなる。
+        # 一つの配列はcsvファイルでいう一つの行レコードとなる
         date_blink_interval_time_fatigue_data = []
         
         if date_blink_interval_time_per_hour_data:
@@ -74,11 +76,7 @@ def create_graph_from_ditection_data_ready(alt_date, hours, colums, keywords):
 
             #VDT作業開始時間
             for per_minitue_data in date_blink_interval_time_per_hour_data:
-                #blink_interval_time_average = 0
-                #blink_interval_time_sum = 0
-                #blink_count_raw_sum = 0
-
-                #per_minitue_data=[[csvファイルの内容], type=object]となっている。
+                #per_minitue_data=[[date, {jins_meme_data_name}], type=object]となっている。
                 minute = per_minitue_data[0][0][14:16]
                 
                 #次のhourにデータが先行しているためノイズとして排除する
@@ -90,27 +88,15 @@ def create_graph_from_ditection_data_ready(alt_date, hours, colums, keywords):
                 #経過時間の取得(最初のpass_timeが0となってしまうので、開始pass_timeを1にした)
                 pass_time = int(minute) - start_vdt_minitue + 1
 
-                strong_blink_interval_avg = per_minitue_data[0][1]
-
-                print(pass_time, minute, start_vdt_minitue)
+                #疲労度に関係のある指標を取得(基本はstrongBlinkIntervalAvgを使っている)
+                fatigue_relation_value = get_fatigue_relation_value(jins_meme_data_name, per_minitue_data)
 
                 #5分ごとに疲労度のデータ取得
                 if pass_time % 5 == 0 and os.path.exists(fatigue_data_file_path):
-                    print(minute)
                     fatigue = get_fatigue_data(fatigue_data_file_path)
 
-                """ #1分ごとの瞬目の時間間隔のデータの取得
-                for data in per_minitue_data:
-                    blink_interval_time_sum += data[1]
-
-                blink_interval_time_average = int(blink_interval_time_sum / len(per_minitue_data)) """
-
-                """ for data in per_minitue_data:
-                    blink_count_raw_sum += data[1]
-                """
-
                 #1分ごとの経過時間・瞬目の間隔時間平均・疲労度のレコードを作成
-                date_blink_interval_time_fatigue_data.append([pass_time, strong_blink_interval_avg, fatigue])
+                date_blink_interval_time_fatigue_data.append([pass_time, fatigue_relation_value, fatigue])
         
         #もし該当する時間にデータが取得されていなかったらスキップする
         else:
@@ -118,25 +104,34 @@ def create_graph_from_ditection_data_ready(alt_date, hours, colums, keywords):
 
     return date_blink_interval_time_fatigue_data 
 
-
+""" 日付から年月日それぞれに分ける """
 def get_date(date):
     year = date[0:4]
     month = date[4:6]
     day = date[6:8]
     return year, month, day
 
+""" csvファイルにある疲労度に関係のある指標を取得する """
+def get_fatigue_relation_value(jins_meme_data_name, per_minute_data):
+    #blink_interval_time_average = 0
+    #blink_interval_time_sum = 0
+    value = None
+
+    if jins_meme_data_name == 'logicIndexData':
+        #logicIndexData15秒ごとのデータなのでcsvファイルに4つのレコードが入っている。
+        for data in per_minute_data:
+            value += data[1]
+
+    elif jins_meme_data_name == 'summaryData':
+        value = per_minute_data[0][1]
+    
+    return value
+
 """ 疲労度の値を取得 """
 def get_fatigue_data(file_path):
     with open(file_path, 'r') as file:
         value = file.read()
     return int(value)
-
-""" あるパスの存在確認をする。存在しない場合は作成する"""
-def check_exist_and_may_create(path):
-    directory_path = os.path.dirname(path)
-
-    if not os.path.exists(directory_path):
-        os.makedirs(directory_path)
 
 """ グラフ作成時に「休憩あり」か「休憩なし」か入力する際のバリデーション """
 def check_rest_or_non(input):

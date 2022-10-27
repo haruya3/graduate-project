@@ -1,5 +1,6 @@
 import datetime, os, time
 from tkinter import messagebox
+from file_operation.module import *
 
 def main():
     start_time = datetime.datetime.now()
@@ -30,15 +31,8 @@ def get_file_path(pass_time):
     day = pass_time.day
     hour = pass_time.hour
     minute = pass_time.minute
+    
     return f'./fatigue_data/{year}/{month}/{day}/{hour}/{minute}.txt'
 
-#TODO:main.pyでも使っているのでmodule化したい
-""" あるパスの存在確認をする。存在しない場合は作成する"""
-def check_exist_and_may_create(path):
-    directory_path = os.path.dirname(path)
-
-    if not os.path.exists(directory_path):
-        os.makedirs(directory_path)
-    
 if __name__ == '__main__':
     main()

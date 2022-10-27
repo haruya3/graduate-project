@@ -1,8 +1,8 @@
-from ast import keyword
 from my_google.auth import Auth
 from my_google.my_drive.module import *
 from googleapiclient.errors import HttpError as HttpError
 from graph.module import *
+from file_operation.module import *
 from dotenv import load_dotenv
 load_dotenv()
 import os
@@ -14,27 +14,27 @@ def main(date, download_flag, delete_flag, create_flag):
     CLIENT_SECRET_ID_PATH = os.getenv('CLIENT_SECRET_ID_PATH')
     drive = Auth(SCOPES, OAUTH_SECRET_PATH, CLIENT_SECRET_ID_PATH, 'drive', 'v3')
 
-    #keyword = 'logicIndexData'
-    keyword = 'summaryData'
+    #jins_meme_data_name = 'logicIndexData'
+    jins_meme_data_name = 'summaryData'
 
     if(download_flag):
-        download_ditection_data_flow(drive, str(date), keyword)
+        download_ditection_data_flow(drive, str(date), jins_meme_data_name)
 
     if(delete_flag):
         delete_ditection_data_flow(drive, str(date))
 
     if(create_flag):
-        create_graph_from_ditection_data_flow(str(date), keyword)
+        create_graph_from_ditection_data_flow(str(date), jins_meme_data_name)
 
 """ Google Driveの特定のフォルダのファイルの取得 """
-def download_ditection_data_flow(drive, date, keyword):
-    params = search_file_ready(date, keyword)
+def download_ditection_data_flow(drive, date, jins_meme_data_name):
+    params = search_file_ready(date, jins_meme_data_name)
 
     files = search_file(drive, params['condition'], params['fields'])
 
     if files:
         for file in files:
-            download_file_path = get_download_file_path(file, keyword)
+            download_file_path = get_download_file_path(file, jins_meme_data_name)
 
             check_exist_and_may_create(download_file_path)
 
@@ -55,23 +55,23 @@ def delete_ditection_data_flow(drive, date):
 
 
 """ Jins memeのデータでグラフ作成 """
-def create_graph_from_ditection_data_flow(date, keyword):
-    important_value = 'strongBlinkIntervalAvg'
-    csv_colums = ['date', important_value]
-    graph_colums = ['pass_time', important_value, 'fatigue']
+def create_graph_from_ditection_data_flow(date, jins_meme_data_name):
+    fatigue_relation_value = 'strongBlinkIntervalAvg'
+    csv_colums = ['date', fatigue_relation_value]
+    graph_colums = ['pass_time', fatigue_relation_value, 'fatigue']
     hours = list(map(lambda x: int(x), input("時間範囲を指定してください(例)12時から15時なら12-15, 1時なら01とする\n").split('-')))
 
-    result = create_graph_from_ditection_data_ready(date, hours, csv_colums, keywords=keyword)
+    result = create_graph_from_ditection_data_ready(date, hours, csv_colums, jins_meme_data_name=jins_meme_data_name)
 
     create_graph_from_ditection_data(date, result, graph_colums)
     
 """ Google Drive APIで特定ファイル検索する際の条件(q, fieldsなど)に指定する値の準備 """
-def search_file_ready(date, keyword=None, all_flag=False):
+def search_file_ready(date, jins_meme_data_name=None, all_flag=False):
     folder_id = os.getenv('FOLDER_ID')
     condition_list = [
         f"'{folder_id}' in parents",
         f"fullText contains '{date}'",
-        f"fullText contains '{keyword}'"
+        f"fullText contains '{jins_meme_data_name}'"
     ]
     if all_flag:
         condition_list.pop()
@@ -82,7 +82,7 @@ def search_file_ready(date, keyword=None, all_flag=False):
     return {'condition': condition, 'fields': fields}
     
 """ Google Drive APIでファイルをダウンロードするさいに必要なファイルパスを取得する """
-def get_download_file_path(file, keyword):
+def get_download_file_path(file, jins_meme_data_name):
     splited_name = file['name'].split('_')
     date_time = splited_name[0].split('-')
     year = date_time[0][0:4]
@@ -92,15 +92,7 @@ def get_download_file_path(file, keyword):
     minitue = date_time[1][2:4]
     second = date_time[1][4:6]
 
-    return  f"ditection_data/{year}/{month}/{day}/{hour}/{minitue}-{second}_{keyword}.csv"
-
-""" あるパスの存在確認をする。存在しない場合は作成する"""
-def check_exist_and_may_create(path):
-    directory_path = os.path.dirname(path)
-
-    if not os.path.exists(directory_path):
-        os.makedirs(directory_path)
-    
+    return  f"ditection_data/{year}/{month}/{day}/{hour}/{minitue}-{second}_{jins_meme_data_name}.csv"
 
 #TODO: ドライブ内の特定のファイルのダウンロードオプションとデリートオプションを設ける
 def set_args():

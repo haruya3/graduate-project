@@ -63,7 +63,7 @@ def create_graph_from_ditection_data_flow(date, jins_meme_data_name):
 
     result = create_graph_from_ditection_data_ready(date, hours, csv_colums, jins_meme_data_name=jins_meme_data_name)
 
-    create_graph_from_ditection_data(date, result, graph_colums)
+    create_graph_from_ditection_data(date, hours, result, graph_colums)
     
 """ Google Drive APIで特定ファイル検索する際の条件(q, fieldsなど)に指定する値の準備 """
 def search_file_ready(date, jins_meme_data_name=None, all_flag=False):

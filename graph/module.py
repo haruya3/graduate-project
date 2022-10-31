@@ -3,11 +3,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from file_operation.module import *
 
-def create_graph_from_ditection_data(alt_date, result, colums):
+def create_graph_from_ditection_data(alt_date, hours, result, colums):
     plt.rcParams['font.family'] = 'Meiryo'
     year, month, day = get_date(alt_date)
     rest_or_non = check_rest_or_non(input("「休憩あり」か「休憩なし」か入力してください: (例) 休憩ありの場合は->rest, 休憩なしの場合は->non-rest\n"))
-    image_path = f'./graph/{year}/{month}/{day}/{rest_or_non}/blinkIntervalMean-fatigue.png'
+    image_path = f'./graph/{year}/{month}/{day}/{hours[0]}/{rest_or_non}/blinkIntervalMean-fatigue.png'
     check_exist_and_may_create(image_path)
 
     df = pd.DataFrame(data=result, columns=colums)

@@ -3,17 +3,25 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from file_operation.module import *
 
-def create_graph_from_ditection_data(alt_date, hours, result, colums):
+def create_graph_from_ditection_data(alt_date, hours, result, colums, threshold):
+    #グラフの初期設定
     plt.rcParams['font.family'] = 'Meiryo'
-    year, month, day = get_date(alt_date)
-    rest_or_non = check_rest_or_non(input("「休憩あり」か「休憩なし」か入力してください: (例) 休憩ありの場合は->rest, 休憩なしの場合は->non-rest\n"))
-    image_path = f'./graph/{year}/{month}/{day}/{hours[0]}/{rest_or_non}/blinkIntervalMean-fatigue.png'
-    check_exist_and_may_create(image_path)
+    
+    #グラフの保存先
+    image_path = set_image_path(alt_date, hours)
+
+    threshold_pass_time = threshold['pass_time']
+    threshold_fatigue_relation_value = int(threshold['fatigue_relation_value'])
 
     df = pd.DataFrame(data=result, columns=colums)
+    
+    #サブプロット作成
     fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(9, 6))
     plt.subplots_adjust(wspace=0.6)
     per_five_minute = list(filter(lambda x: x % 5 == 0, range(0, 61)))
+
+    #経過時間と瞬目の間隔時間平均のグラフについて
+    axes[0].plot(threshold_pass_time, threshold_fatigue_relation_value, "ro")
 
     df.plot(
          title='VDT開始からの経過時間による瞬目の間隔時間平均の変化',
@@ -24,7 +32,18 @@ def create_graph_from_ditection_data(alt_date, hours, result, colums):
          ylabel='瞬目の間隔時間平均',
          xticks= per_five_minute,
          yticks= per_five_minute
-        )
+    )
+    
+    axes[0].text(
+        x=threshold_pass_time, 
+        y=threshold_fatigue_relation_value, 
+        s=f'閾値 ({threshold_pass_time}, {threshold_fatigue_relation_value})',
+        c='magenta',
+        ha='left',
+        va='bottom'
+    )
+
+    #経過時間と疲労度のグラフについて
     df.plot(
         title='VDT開始からの経過時間による疲労度の変化',
         ax=axes[1], 
@@ -34,8 +53,10 @@ def create_graph_from_ditection_data(alt_date, hours, result, colums):
         ylabel='疲労度',
         xticks= per_five_minute,
         yticks= range(1, 6)
-        )
+    )
+    
     fig.savefig(image_path)
+    print('グラフの作成が出来ました。')
 
 
 #download_ditection_dataで取得したデータからグラフを作成するための準備
@@ -48,6 +69,8 @@ def create_graph_from_ditection_data_ready(alt_date, hours, colums, jins_meme_da
     fatigue = 0
     #VDT作業開始時間
     start_vdt_minitue = 0
+    #瞬目の間隔時間平均の閾値
+    threshold = {}
     
     #1時間ごとにデータ(date_blink_interval_time_fatigue_data)を取得していく->hours[-1]とすることで配列要素1つだけの時エラー回避
     for hour in range(hours[0], hours[-1] + 1):
@@ -97,12 +120,17 @@ def create_graph_from_ditection_data_ready(alt_date, hours, colums, jins_meme_da
 
                 #1分ごとの経過時間・瞬目の間隔時間平均・疲労度のレコードを作成
                 date_blink_interval_time_fatigue_data.append([pass_time, fatigue_relation_value, fatigue])
+
+                #瞬目の間隔時間平均の閾値を定める
+                if fatigue >= 3 and not threshold:
+                    threshold  = {'pass_time': pass_time, 'fatigue_relation_value': fatigue_relation_value}
+
         
         #もし該当する時間にデータが取得されていなかったらスキップする
         else:
             continue
 
-    return date_blink_interval_time_fatigue_data 
+    return date_blink_interval_time_fatigue_data, threshold 
 
 """ 日付から年月日それぞれに分ける """
 def get_date(date):
@@ -141,3 +169,12 @@ def check_rest_or_non(input):
         print("restかnon-restで入力してください。")
         exit()
 
+
+def set_image_path(alt_date, hours):
+    #グラフ保存先パスの準備
+    year, month, day = get_date(alt_date)
+    rest_or_non = check_rest_or_non(input("「休憩あり」か「休憩なし」か入力してください: (例) 休憩ありの場合は->rest, 休憩なしの場合は->non-rest\n"))
+    image_path = f'./graph/{year}/{month}/{day}/{hours[0]}/{rest_or_non}/blinkIntervalMean-fatigue.png'
+    check_exist_and_may_create(image_path)
+
+    return image_path

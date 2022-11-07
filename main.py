@@ -61,9 +61,9 @@ def create_graph_from_ditection_data_flow(date, jins_meme_data_name):
     graph_colums = ['pass_time', fatigue_relation_value, 'fatigue']
     hours = list(map(lambda x: int(x), input("時間範囲を指定してください(例)12時から15時なら12-15, 1時なら01とする\n").split('-')))
 
-    result = create_graph_from_ditection_data_ready(date, hours, csv_colums, jins_meme_data_name=jins_meme_data_name)
+    result, threshold = create_graph_from_ditection_data_ready(date, hours, csv_colums, jins_meme_data_name=jins_meme_data_name)
 
-    create_graph_from_ditection_data(date, hours, result, graph_colums)
+    create_graph_from_ditection_data(date, hours, result, graph_colums, threshold)
     
 """ Google Drive APIで特定ファイル検索する際の条件(q, fieldsなど)に指定する値の準備 """
 def search_file_ready(date, jins_meme_data_name=None, all_flag=False):

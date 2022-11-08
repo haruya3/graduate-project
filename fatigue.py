@@ -7,7 +7,7 @@ def main():
     while True:
         now_time = datetime.datetime.now()
         pass_time = now_time.minute - start_time.minute
-    
+
         if pass_time != 0 and pass_time % 5 == 0:
             messagebox.showinfo('入力通知','1分以内に被験者の疲労度を入力してください')
             #TODO:入力のバリデーションしてないから余裕あればやる
@@ -27,10 +27,10 @@ def main():
 
 def get_file_path(pass_time):
     year = pass_time.year
-    month = pass_time.month
-    day = pass_time.day
-    hour = pass_time.hour
-    minute = pass_time.minute
+    month = str(pass_time.month).zfill(2)
+    day = str(pass_time.day).zfill(2)
+    hour = str(pass_time.hour).zfill(2)
+    minute = str(pass_time.minute).zfill(2)
     
     return f'./fatigue_data/{year}/{month}/{day}/{hour}/{minute}.txt'
 

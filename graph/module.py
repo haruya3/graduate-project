@@ -6,19 +6,25 @@ from file_operation.module import *
 def create_graph_from_ditection_data(alt_date, hours, result, colums, threshold):
     #グラフの初期設定
     plt.rcParams['font.family'] = 'Meiryo'
-    
-    #グラフの保存先
-    image_path = set_image_path(alt_date, hours)
 
+    #瞬目の間隔時間平均の閾値(疲労度が3になった時の値)のセット
+    if not threshold:
+        print('実験を開始した時間(hour)を指定してください')
+        exit()
     threshold_pass_time = threshold['pass_time']
     threshold_fatigue_relation_value = int(threshold['fatigue_relation_value'])
 
+    #グラフの保存先
+    image_path = set_image_path(alt_date, hours)
+
+    #作成するグラフの実験時間に依存する変数を取得する(作成するグラフの時間の範囲に依存する)
+    per_five_minute, per_ten_minute, figsize = get_shaft_interval_figsize(hours[0] == hours[-1])
+
     df = pd.DataFrame(data=result, columns=colums)
-    
+
     #サブプロット作成
-    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(9, 6))
+    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=figsize)
     plt.subplots_adjust(wspace=0.6)
-    per_five_minute = list(filter(lambda x: x % 5 == 0, range(0, 61)))
 
     #経過時間と瞬目の間隔時間平均のグラフについて
     axes[0].plot(threshold_pass_time, threshold_fatigue_relation_value, "ro")
@@ -30,7 +36,7 @@ def create_graph_from_ditection_data(alt_date, hours, result, colums, threshold)
          y=colums[1],
          xlabel='経過時間',
          ylabel='瞬目の間隔時間平均',
-         xticks= per_five_minute,
+         xticks= per_ten_minute,
          yticks= per_five_minute
     )
     
@@ -51,10 +57,10 @@ def create_graph_from_ditection_data(alt_date, hours, result, colums, threshold)
         y=colums[2],
         xlabel='経過時間',
         ylabel='疲労度',
-        xticks= per_five_minute,
+        xticks= per_ten_minute,
         yticks= range(1, 6)
     )
-    
+
     fig.savefig(image_path)
     print('グラフの作成が出来ました。')
 
@@ -65,18 +71,18 @@ def create_graph_from_ditection_data_ready(alt_date, hours, colums, jins_meme_da
 
     #(例)[[X1(VDT作業開始からの経過時間(5分ごと)) Y1(瞬目の間隔時間平均(5分ごと)) Z1(疲労度申告(5分ごと))], [X2 Y2 Z1],...[Xn Yn Zn]], 全てint型。
     date_blink_interval_time_fatigue_data = []
-    #疲労度)
+    pass_time = 0
+    #疲労度
     fatigue = 0
     #VDT作業開始時間
     start_vdt_minitue = 0
     #瞬目の間隔時間平均の閾値
     threshold = {}
-    
-    #1時間ごとにデータ(date_blink_interval_time_fatigue_data)を取得していく->hours[-1]とすることで配列要素1つだけの時エラー回避
-    for hour in range(hours[0], hours[-1] + 1):
-        target_pathes = glob.glob(f'./ditection_data/{year}/{month}/{day}/{hour}/*{jins_meme_data_name}.csv')
 
+    #1時間以内のグラフか1時間以上のグラフ両方の準備ができる
+    for hour in range(hours[0], hours[-1] + 1):
         date_blink_interval_time_per_hour_data = []
+        target_pathes = glob.glob(f'./ditection_data/{year}/{month}/{day}/{hour}/*{jins_meme_data_name}.csv')
 
         if target_pathes:
             #ひとつずつcsvファイルの中身を取得する
@@ -88,16 +94,12 @@ def create_graph_from_ditection_data_ready(alt_date, hours, colums, jins_meme_da
                     date_blink_interval_time_per_hour_data.append(csv_data.values)
         else:
             print("指定したファイルは存在しません。恐らく時間指定を間違っているかそのようなファイルパスは存在しません。")
-            
-        # 一つの配列はcsvファイルでいう一つの行レコードとなる
-        date_blink_interval_time_fatigue_data = []
         
         if date_blink_interval_time_per_hour_data:
             #まだVDT作業開始時間を設定していない場合
             if start_vdt_minitue == 0:
                 start_vdt_minitue = int(date_blink_interval_time_per_hour_data[0][0][0][14:16])
 
-            #VDT作業開始時間
             for per_minitue_data in date_blink_interval_time_per_hour_data:
                 #per_minitue_data=[[date, {jins_meme_data_name}], type=object]となっている。
                 minute = per_minitue_data[0][0][14:16]
@@ -109,11 +111,14 @@ def create_graph_from_ditection_data_ready(alt_date, hours, colums, jins_meme_da
                 fatigue_data_file_path = f'./fatigue_data/{year}/{month}/{day}/{hour}/{minute}.txt'
 
                 #経過時間の取得(最初のpass_timeが0となってしまうので、開始pass_timeを1にした)
-                pass_time = int(minute) - start_vdt_minitue + 1
+                if hour == hours[0]:
+                    pass_time = int(minute) - start_vdt_minitue + 1
+                else:
+                    pass_time += int(minute)
 
                 #疲労度に関係のある指標を取得(基本はstrongBlinkIntervalAvgを使っている)
                 fatigue_relation_value = get_fatigue_relation_value(jins_meme_data_name, per_minitue_data)
-
+                
                 #5分ごとに疲労度のデータ取得
                 if pass_time % 5 == 0 and os.path.exists(fatigue_data_file_path):
                     fatigue = get_fatigue_data(fatigue_data_file_path)
@@ -124,11 +129,6 @@ def create_graph_from_ditection_data_ready(alt_date, hours, colums, jins_meme_da
                 #瞬目の間隔時間平均の閾値を定める
                 if fatigue >= 3 and not threshold:
                     threshold  = {'pass_time': pass_time, 'fatigue_relation_value': fatigue_relation_value}
-
-        
-        #もし該当する時間にデータが取得されていなかったらスキップする
-        else:
-            continue
 
     return date_blink_interval_time_fatigue_data, threshold 
 
@@ -169,12 +169,28 @@ def check_rest_or_non(input):
         print("restかnon-restで入力してください。")
         exit()
 
-
+""" グラフ保存先パスの準備 """
 def set_image_path(alt_date, hours):
-    #グラフ保存先パスの準備
     year, month, day = get_date(alt_date)
     rest_or_non = check_rest_or_non(input("「休憩あり」か「休憩なし」か入力してください: (例) 休憩ありの場合は->rest, 休憩なしの場合は->non-rest\n"))
-    image_path = f'./graph/{year}/{month}/{day}/{hours[0]}/{rest_or_non}/blinkIntervalMean-fatigue.png'
+
+    if hours[0] == hours[-1]:
+        image_path = f'./graph/{year}/{month}/{day}/{hours[0]}/{rest_or_non}/blinkIntervalMean-fatigue.png'
+    else:
+        image_path = f'./graph/{year}/{month}/{day}/{hours[0]}-{hours[-1]}/{rest_or_non}/blinkIntervalMean-fatigue.png'
+
     check_exist_and_may_create(image_path)
 
     return image_path
+
+def get_shaft_interval_figsize(less_than_one_hour_flag):
+    per_five_minute = list(filter(lambda x: x % 5 == 0, range(0, 61)))
+
+    if less_than_one_hour_flag:
+        per_ten_minute = list(filter(lambda x: x % 5 == 0, range(0, 61)))
+        figsize = (9, 6)
+    else:
+        per_ten_minute = list(filter(lambda x: x % 10 == 0, range(0, 121)))
+        figsize = (12, 9)
+    
+    return per_five_minute, per_ten_minute, figsize

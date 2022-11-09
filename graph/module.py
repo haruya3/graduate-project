@@ -78,6 +78,8 @@ def create_graph_from_ditection_data_ready(alt_date, hours, colums, jins_meme_da
     start_vdt_minitue = 0
     #瞬目の間隔時間平均の閾値
     threshold = {}
+    #時間をまたぐまでの経過時間
+    within_hour_pass_time = None
 
     #1時間以内のグラフか1時間以上のグラフ両方の準備ができる
     for hour in range(hours[0], hours[-1] + 1):
@@ -114,7 +116,11 @@ def create_graph_from_ditection_data_ready(alt_date, hours, colums, jins_meme_da
                 if hour == hours[0]:
                     pass_time = int(minute) - start_vdt_minitue + 1
                 else:
-                    pass_time += int(minute)
+                    #時間をまたいだらそれまでの時間をセット(:例)14:06から開始して15:00までの経過時間54をwithin_hour_pass_timeに代入する
+                    if not within_hour_pass_time:
+                        within_hour_pass_time = pass_time
+
+                    pass_time = within_hour_pass_time +  int(minute)
 
                 #疲労度に関係のある指標を取得(基本はstrongBlinkIntervalAvgを使っている)
                 fatigue_relation_value = get_fatigue_relation_value(jins_meme_data_name, per_minitue_data)
@@ -129,6 +135,8 @@ def create_graph_from_ditection_data_ready(alt_date, hours, colums, jins_meme_da
                 #瞬目の間隔時間平均の閾値を定める
                 if fatigue >= 3 and not threshold:
                     threshold  = {'pass_time': pass_time, 'fatigue_relation_value': fatigue_relation_value}
+                
+                print(pass_time)
 
     return date_blink_interval_time_fatigue_data, threshold 
 

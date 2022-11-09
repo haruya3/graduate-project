@@ -46,12 +46,22 @@ def download_ditection_data_flow(drive, date, jins_meme_data_name):
 def delete_ditection_data_flow(drive, date):
     params = search_file_ready(date, all_flag=True)
     files = search_file(drive, params['condition'], params['fields'])
+    delete_file_count = 0
 
     if files:
-        for file in files:
+        for index, file in enumerate(files):
             delete_file(drive, file['id'])
+            if index % 10 == 0:
+                print(f'ファイル削除数: {index}個')
+            if index == 100:
+                break
+            delete_file_count = index
         
-        print(f'{date}についての{len(files)}個のファイルの削除が完了しました。')
+        print(f'{date}についての{delete_file_count}個のファイルの削除が完了しました。')
+        print(f'{date}の残りファイル数は{len(files) - delete_file_count}個です。')
+    else:
+        print("指定した条件に一致するファイルは見つかりませんでいた。")
+
 
 
 """ Jins memeのデータでグラフ作成 """

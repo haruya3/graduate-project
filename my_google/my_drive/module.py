@@ -1,5 +1,3 @@
-from array import array
-from urllib import request
 from googleapiclient.errors import HttpError as HttpError
 from googleapiclient.http import MediaIoBaseDownload
 
@@ -56,5 +54,7 @@ def download_file(drive, file_id, download_file_path):
 def delete_file(drive, file_id):
     try:
         drive.client.files().delete(fileId=file_id).execute()
+    except HttpError as error:
+        print(f'An error occurred: {error}')
     except Exception as e:
         print(f'[ERROR] {type(e): str(e)}')

@@ -1,4 +1,4 @@
-import glob, os, re
+import glob, os
 import pandas as pd
 import matplotlib.pyplot as plt
 from file_operation.module import *
@@ -124,20 +124,17 @@ def create_graph_from_ditection_data_ready(alt_date, hours, colums, jins_meme_da
 
                 #疲労度に関係のある指標を取得(基本はstrongBlinkIntervalAvgを使っている)
                 fatigue_relation_value = get_fatigue_relation_value(jins_meme_data_name, per_minitue_data)
-                
                 #5分ごとに疲労度のデータ取得
                 if pass_time % 5 == 0 and os.path.exists(fatigue_data_file_path):
+
                     fatigue = get_fatigue_data(fatigue_data_file_path)
 
                 #1分ごとの経過時間・瞬目の間隔時間平均・疲労度のレコードを作成
                 date_blink_interval_time_fatigue_data.append([pass_time, fatigue_relation_value, fatigue])
-
                 #瞬目の間隔時間平均の閾値を定める
                 if fatigue >= 3 and not threshold:
                     threshold  = {'pass_time': pass_time, 'fatigue_relation_value': fatigue_relation_value}
                 
-                print(pass_time)
-
     return date_blink_interval_time_fatigue_data, threshold 
 
 """ 日付から年月日それぞれに分ける """

@@ -1,7 +1,8 @@
 from my_google.auth import Auth
 from my_google.my_drive.module import *
 from googleapiclient.errors import HttpError as HttpError
-from graph.module import *
+from data_edit.graph.module import *
+from data_edit.table.module import *
 from file_operation.module import *
 from dotenv import load_dotenv
 load_dotenv()

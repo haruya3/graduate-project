@@ -1,11 +1,11 @@
 from googleapiclient.errors import HttpError as HttpError
 from googleapiclient.http import MediaIoBaseDownload
 
-def search_file(drive, condition, fields):
+def search_file(drive, condition, fields, orderBy=None, page_limit=100):
     try:
         files = []
         next_page_token = None
-        page_size = 100
+        page_size = page_limit
         request_count = 0
 
         while True:
@@ -14,6 +14,7 @@ def search_file(drive, condition, fields):
                 fields=fields,
                 pageSize=page_size,
                 pageToken=next_page_token,
+                orderBy=orderBy
             ).execute()
             request_count += 1
 
@@ -21,11 +22,9 @@ def search_file(drive, condition, fields):
             if request_count == 10:
                 print(f'過剰なリクエストです。時間を置いて再度リクエストしてください。')
             
-            print(f'最低リクエスト数: {request_count}')
-            
             files.extend(result.get('files', []))
 
-            if next_page_token is None:
+            if next_page_token is None or page_limit != 100:
                 break
             
         return files

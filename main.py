@@ -1,9 +1,10 @@
 from my_google.auth import Auth
 from my_google.my_drive.module import *
+from my_google.my_drive.helper import search_file_ready, get_download_file_path
 from googleapiclient.errors import HttpError as HttpError
 from data_edit.graph.module import *
 from data_edit.table.module import *
-from file_operation.module import *
+from file_operation.module import check_exist_and_may_create
 from dotenv import load_dotenv
 load_dotenv()
 import os
@@ -53,13 +54,14 @@ def delete_ditection_data_flow(drive, date):
     delete_file_count = 0
 
     if files:
+        print(f'{date}についてのファイルは{len(files)}個あります。')
         for index, file in enumerate(files):
             delete_file(drive, file['id'])
             if index % 10 == 0:
                 print(f'ファイル削除数: {index}個')
             if index == 100:
+                delete_file_count = index
                 break
-            delete_file_count = index
         
         print(f'{date}についての{delete_file_count}個のファイルの削除が完了しました。')
         print(f'{date}の残りファイル数は{len(files) - delete_file_count}個です。')
@@ -68,7 +70,7 @@ def delete_ditection_data_flow(drive, date):
 
 """ Jins memeのデータでグラフ作成 """
 def create_graph_from_ditection_data_flow(date, jins_meme_data_name):
-    fatigue_relation_value = 'strongBlinkIntervalAvg'
+    fatigue_relation_value = os.getenv('FATIGUE_RELATION_VALUE')
     csv_colums = ['date', fatigue_relation_value]
     graph_colums = ['pass_time', fatigue_relation_value, 'fatigue']
     hours = list(map(lambda x: int(x), input("時間範囲を指定してください(例)12時から15時なら12-15, 1時なら01とする\n").split('-')))
@@ -82,35 +84,6 @@ def create_blink_interval_time_amplitude_table_flow(date, jins_meme_data_name):
     table_minimum_max, table_average = create_blink_interval_time_amplitude_table(date, jins_meme_data_name)
     print(table_minimum_max)
     print(table_average)
-
-""" Google Drive APIで特定ファイル検索する際の条件(q, fieldsなど)に指定する値の準備 """
-def search_file_ready(date, jins_meme_data_name=None, all_flag=False):
-    folder_id = os.getenv('FOLDER_ID')
-    condition_list = [
-        f"'{folder_id}' in parents",
-        f"fullText contains '{date}'",
-        f"fullText contains '{jins_meme_data_name}'"
-    ]
-    if all_flag:
-        condition_list.pop()
-        
-    condition = " and ".join(condition_list)
-    fields = "nextPageToken, files(id, name)"
-    
-    return {'condition': condition, 'fields': fields}
-    
-""" Google Drive APIでファイルをダウンロードするさいに必要なファイルパスを取得する """
-def get_download_file_path(file, jins_meme_data_name):
-    splited_name = file['name'].split('_')
-    date_time = splited_name[0].split('-')
-    year = date_time[0][0:4]
-    month = date_time[0][4:6]
-    day = date_time[0][6:8]
-    hour = date_time[1][0:2]
-    minitue = date_time[1][2:4]
-    second = date_time[1][4:6]
-
-    return  f"ditection_data/{year}/{month}/{day}/{hour}/{minitue}-{second}_{jins_meme_data_name}.csv"
 
 #TODO: ドライブ内の特定のファイルのダウンロードオプションとデリートオプションを設ける
 def set_args():

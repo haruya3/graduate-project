@@ -8,7 +8,8 @@ def check_exist_and_may_create(path):
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
 
-""" csvファイルから指定した列のデータを読み込む """
+""" csvファイルから指定した列のデータを読み込む  """
+#(注意)target_pathes: array
 def readCsv(target_pathes, colums):
     result = []
     #ひとつずつcsvファイルの中身を取得する

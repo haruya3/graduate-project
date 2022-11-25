@@ -23,3 +23,33 @@ def get_fatigue_data(file_path):
     with open(file_path, 'r') as file:
         value = file.read()
     return int(value)
+
+import datetime
+from file_operation.module import readCsv
+from my_google.my_drive.helper import execute_download_file
+""" 
+    Jins memeでGoogle Driveに作成されたCSVファイルのdateキーから時間を取得する
+    これをfatigue保存先パスで使うことでfatigueファイルを読み込む(graph/module.pyで5分ごと(このpass_timeもCSVファイルのdateキーの値)に読み込む際に)際の誤差がなくなる
+"""
+def get_date_from_jins_meme_file(drive, files, jins_meme_data_name):
+    if files:
+        download_file_path = execute_download_file(drive, files[0], jins_meme_data_name)
+        #date=[[['date', dtype=object]]]
+        date = readCsv([download_file_path], ['date'])
+        #日本時間に合わせる
+        JST = datetime.timedelta(hours=9)
+        
+        return datetime.datetime.fromisoformat(date[0][0][0][:16]) + JST
+    else:
+        print('入力された日付時間のデータはありませんでした。')
+        exit()
+
+""" 疲労度を保存するファイルパスを取得 """
+def get_fatigue_file_path(date):
+    year = date.year
+    month = date.month
+    day = date.day
+    hour = date.hour
+    minute = date.minute
+
+    return f'./fatigue_data/{year}/{month}/{day}/{hour}/{minute}.txt'

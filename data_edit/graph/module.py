@@ -86,6 +86,7 @@ def create_graph_from_ditection_data_ready(alt_date, hours, colums, jins_meme_da
     threshold = {}
     #時間をまたぐまでの経過時間
     within_hour_pass_time = None
+    previous_hour=None
     #疲労度が記録されているファイルパス
     fatigue_data_file_path = None
 
@@ -118,15 +119,17 @@ def create_graph_from_ditection_data_ready(alt_date, hours, colums, jins_meme_da
                     pass_time = int(minute) - start_vdt_minitue + 1
                 else:
                     #時間をまたいだらそれまでの時間をセット(:例)14:06から開始して15:00までの経過時間54をwithin_hour_pass_timeに代入する
-                    if not within_hour_pass_time:
+                    if not within_hour_pass_time or hour != previous_hour:
+                        #TODO:なぜかwithin_hour_pass_timeには+1しなきゃいけないときとしたらダメな時がある(fatigue_dataとの関連付けについての話)。
                         within_hour_pass_time = pass_time
-
+                        previous_hour = hour
                     pass_time = within_hour_pass_time +  int(minute)
 
                 #疲労度に関係のある指標を取得(基本はstrongBlinkIntervalAvgを使っている)
                 fatigue_relation_value = get_fatigue_relation_value(jins_meme_data_name, per_minitue_data)
 
                 fatigue_data_file_path = get_fatigue_data_path(per_minitue_data[0][0])
+
                 #5分ごとに疲労度のデータ取得
                 if pass_time % 5 == 0 and os.path.exists(fatigue_data_file_path):
                     fatigue = get_fatigue_data(fatigue_data_file_path)
@@ -169,9 +172,9 @@ def set_image_path(alt_date, hours):
     rest_or_non = check_rest_or_non(input("「休憩あり」か「休憩なし」か入力してください: (例) 休憩ありの場合は->rest, 休憩なしの場合は->non-rest\n"))
 
     if hours[0] == hours[-1]:
-        image_path = f'./graph/{year}/{month}/{day}/{hours[0]}/{rest_or_non}/blinkIntervalMean-fatigue.png'
+        image_path = f'./data_edit/graph/{year}/{month}/{day}/{hours[0]}/{rest_or_non}/blinkIntervalMean-fatigue.png'
     else:
-        image_path = f'./graph/{year}/{month}/{day}/{hours[0]}-{hours[-1]}/{rest_or_non}/blinkIntervalMean-fatigue.png'
+        image_path = f'./data_edit/graph/{year}/{month}/{day}/{hours[0]}-{hours[-1]}/{rest_or_non}/blinkIntervalMean-fatigue.png'
 
     check_exist_and_may_create(image_path)
 

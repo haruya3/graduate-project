@@ -3,6 +3,8 @@ from statistics import mean
 from tabulate import tabulate
 from data_edit.module import get_date, get_fatigue_data_path, get_fatigue_data
 from file_operation.module import readCsv
+from dotenv import load_dotenv
+load_dotenv()
 
 """ 疲労度ごとの瞬目の間隔時間平均の振り幅の表作成 """
 def create_blink_interval_time_amplitude_table(date, jins_meme_data_name):
@@ -11,8 +13,8 @@ def create_blink_interval_time_amplitude_table(date, jins_meme_data_name):
     #取得したhashの分析
     blink_interval_at_fatigue_minimum_max, blink_interval_at_fatigue_average = analyze_blink_interval_at_fatigue(blink_interval_at_fatigue_hash)
     
-    table_data_average = get_table_data(blink_interval_at_fatigue_average, default_flag=True)
-    table_data_minimum_max = get_table_data(blink_interval_at_fatigue_minimum_max)
+    table_data_average = get_table_data(blink_interval_at_fatigue_average)
+    table_data_minimum_max = get_table_data(blink_interval_at_fatigue_minimum_max, default_flag=False)
     headers = ['1', '2', '3', '4', '5']
 
     table_minimum_max = tabulate(tabular_data=table_data_minimum_max, headers=headers, tablefmt='html')
@@ -45,7 +47,13 @@ def ready_blink_interval_at_fatigue_hash(date, jins_meme_data_name):
             if os.path.exists(fatigue_data_path):
                 fatigue = get_fatigue_data(fatigue_data_path)
                 #特殊なフィルター(不正なデータを取り除く)
-                if fatigue == 2 and date_blink_interval[1] > 7:
+                if fatigue == 2 and date_blink_interval[1] > float(os.getenv('FATIGUE_TWO_FILTER')):
+                    continue
+                #疲労度3になった時は瞬目の間隔時間平均値が4の時が圧倒的に多いため
+                if fatigue == 3 and date_blink_interval[1] < float(os.getenv('FATIGUE_THREE_FILTER')):
+                    continue
+                #疲労度2の時の瞬目の間隔時間平均値が4.8なのでそれ以下は除外する
+                if fatigue == 4 and date_blink_interval[1] <= float(os.getenv('FATIGUE_FOURTH_FILTER')):
                     continue
                 blink_interval_at_fatigue_hash[fatigue].append(date_blink_interval[1])
     
@@ -64,7 +72,9 @@ def analyze_blink_interval_at_fatigue(blink_interval_at_fatigue_hash):
     return blink_interval_at_fatigue_max_minimum, blink_interval_at_fatigue_average
 
 """ 表作成するために加工したデータを取得 """
-def get_table_data(hash, default_flag=False):
+#defult_flag : hash=[]と一次元配列の時True
+#table_minimum_maxの場合[[],[],[]..]の二次元配列配列の時はFalse
+def get_table_data(hash, default_flag=True):
     if default_flag:
         table_data = [list(hash.values())] 
     else:

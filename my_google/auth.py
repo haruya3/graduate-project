@@ -3,6 +3,7 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.exceptions import RefreshError
+from google.auth.exceptions import DefaultCredentialsError
 import os
 
 class Auth:
@@ -33,6 +34,8 @@ class Auth:
             if input("トークンの期限が切れています。再発行しますか？(yes or no)\n") == "yes":
                 os.remove(secret_path)
                 self.OAuth(scope, secret_path, client_secret_id_path)
+        except DefaultCredentialsError as e:
+            print('再実行してください')
 
 
 

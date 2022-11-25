@@ -1,13 +1,15 @@
 from my_google.auth import Auth
 from my_google.my_drive.module import *
+from my_google.my_drive.helper import search_file_ready, get_download_file_path
 from googleapiclient.errors import HttpError as HttpError
-from graph.module import *
-from file_operation.module import *
+from data_edit.graph.module import *
+from data_edit.table.module import *
+from file_operation.module import check_exist_and_may_create
 from dotenv import load_dotenv
 load_dotenv()
 import os
 
-def main(date, download_flag, delete_flag, create_flag):
+def main(date, download_flag, delete_flag, create_graph_flag, create_table_flag):
     #グーグルサービスクライアント初期化
     SCOPES = [os.getenv('SCOPE')]
     OAUTH_SECRET_PATH = os.getenv('OAUTH_SECRET_PATH')
@@ -23,8 +25,11 @@ def main(date, download_flag, delete_flag, create_flag):
     if(delete_flag):
         delete_ditection_data_flow(drive, str(date))
 
-    if(create_flag):
+    if(create_graph_flag):
         create_graph_from_ditection_data_flow(str(date), jins_meme_data_name)
+    
+    if(create_table_flag):
+        create_blink_interval_time_amplitude_table_flow(str(date), jins_meme_data_name)
 
 """ Google Driveの特定のフォルダのファイルの取得 """
 def download_ditection_data_flow(drive, date, jins_meme_data_name):
@@ -46,53 +51,39 @@ def download_ditection_data_flow(drive, date, jins_meme_data_name):
 def delete_ditection_data_flow(drive, date):
     params = search_file_ready(date, all_flag=True)
     files = search_file(drive, params['condition'], params['fields'])
+    delete_file_count = 0
 
     if files:
-        for file in files:
+        print(f'{date}についてのファイルは{len(files)}個あります。')
+        for index, file in enumerate(files):
             delete_file(drive, file['id'])
+            if index % 10 == 0:
+                print(f'ファイル削除数: {index}個')
+            if index == 100:
+                delete_file_count = index
+                break
         
-        print(f'{date}についての{len(files)}個のファイルの削除が完了しました。')
-
+        print(f'{date}についての{delete_file_count}個のファイルの削除が完了しました。')
+        print(f'{date}の残りファイル数は{len(files) - delete_file_count}個です。')
+    else:
+        print("指定した条件に一致するファイルは見つかりませんでいた。")
 
 """ Jins memeのデータでグラフ作成 """
 def create_graph_from_ditection_data_flow(date, jins_meme_data_name):
-    fatigue_relation_value = 'strongBlinkIntervalAvg'
+    fatigue_relation_value = os.getenv('FATIGUE_RELATION_VALUE')
     csv_colums = ['date', fatigue_relation_value]
     graph_colums = ['pass_time', fatigue_relation_value, 'fatigue']
     hours = list(map(lambda x: int(x), input("時間範囲を指定してください(例)12時から15時なら12-15, 1時なら01とする\n").split('-')))
 
-    result = create_graph_from_ditection_data_ready(date, hours, csv_colums, jins_meme_data_name=jins_meme_data_name)
+    result, threshold = create_graph_from_ditection_data_ready(date, hours, csv_colums, jins_meme_data_name=jins_meme_data_name)
 
-    create_graph_from_ditection_data(date, hours, result, graph_colums)
-    
-""" Google Drive APIで特定ファイル検索する際の条件(q, fieldsなど)に指定する値の準備 """
-def search_file_ready(date, jins_meme_data_name=None, all_flag=False):
-    folder_id = os.getenv('FOLDER_ID')
-    condition_list = [
-        f"'{folder_id}' in parents",
-        f"fullText contains '{date}'",
-        f"fullText contains '{jins_meme_data_name}'"
-    ]
-    if all_flag:
-        condition_list.pop()
-        
-    condition = " and ".join(condition_list)
-    fields = "nextPageToken, files(id, name)"
-    
-    return {'condition': condition, 'fields': fields}
-    
-""" Google Drive APIでファイルをダウンロードするさいに必要なファイルパスを取得する """
-def get_download_file_path(file, jins_meme_data_name):
-    splited_name = file['name'].split('_')
-    date_time = splited_name[0].split('-')
-    year = date_time[0][0:4]
-    month = date_time[0][4:6]
-    day = date_time[0][6:8]
-    hour = date_time[1][0:2]
-    minitue = date_time[1][2:4]
-    second = date_time[1][4:6]
+    create_graph_from_ditection_data(date, hours, result, graph_colums, threshold)
 
-    return  f"ditection_data/{year}/{month}/{day}/{hour}/{minitue}-{second}_{jins_meme_data_name}.csv"
+""" 疲労度ごとの瞬目の間隔時間平均の振り幅の表作成 """
+def create_blink_interval_time_amplitude_table_flow(date, jins_meme_data_name): 
+    table_minimum_max, table_average = create_blink_interval_time_amplitude_table(date, jins_meme_data_name)
+    print(table_minimum_max)
+    print(table_average)
 
 #TODO: ドライブ内の特定のファイルのダウンロードオプションとデリートオプションを設ける
 def set_args():
@@ -101,7 +92,8 @@ def set_args():
     parser.add_argument("-w", "--when", help="いつのデータを取得するか指定する。形式: (yyyymmdd-HH)", required=True)
     parser.add_argument("-d", "--download", help="データを取得する", action='store_true')
     parser.add_argument("-D", "--delete", help="データを削除する", action='store_true')
-    parser.add_argument("-c", "--create", help="取得したデータからグラフを作成する", action='store_true')
+    parser.add_argument("-cG", "--createGraph", help="取得したデータからグラフを作成する", action='store_true')
+    parser.add_argument("-cT", "--createTable", help="取得したデータからグラフを作成する", action='store_true')
     return parser.parse_args()
 
 def check_google_drive_action(*actions):
@@ -116,6 +108,6 @@ def check_google_drive_action(*actions):
 
 if __name__ == '__main__':
     args = set_args()
-    check_google_drive_action(args.download, args.delete, args.create)
+    check_google_drive_action(args.download, args.delete, args.createGraph, args.createTable)
 
-    main(args.when, args.download, args.delete, args.create)
+    main(args.when, args.download, args.delete, args.createGraph, args.createTable)

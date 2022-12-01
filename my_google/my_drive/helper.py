@@ -21,7 +21,7 @@ def search_file_ready(date, jins_meme_data_name=None, page_limit=100, all_flag=F
 
 """ Google Drive APIでファイルをダウンロードするさいに必要なファイルパスを取得する """
 #TODO:これ、ファイル名をGoogle Driveに保存されているファイル名の時間にしているけど大丈夫かな？ファイル名とファイル内のdateキーの時間と誤差があるため心配
-def get_download_file_path(file, jins_meme_data_name):
+def get_download_file_path(file, jins_meme_data_name, rest_flag=False):
     splited_name = file['name'].split('_')
     date_time = splited_name[0].split('-')
     year = date_time[0][0:4]
@@ -30,8 +30,12 @@ def get_download_file_path(file, jins_meme_data_name):
     hour = date_time[1][0:2]
     minitue = date_time[1][2:4]
     second = date_time[1][4:6]
+    file_path =  f"ditection_data/{year}/{month}/{day}/{hour}/{minitue}-{second}_{jins_meme_data_name}.csv"
+    #「休憩あり」の実験データ用パス
+    if rest_flag:
+        file_path = f"ditection_data/rest/{year}/{month}/{day}/{hour}/{minitue}-{second}_{jins_meme_data_name}.csv"
 
-    return  f"ditection_data/{year}/{month}/{day}/{hour}/{minitue}-{second}_{jins_meme_data_name}.csv"
+    return file_path
 
 """ 開始時刻を取得する """
 def get_start_time(drive, jins_meme_data_name, date_time):

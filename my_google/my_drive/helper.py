@@ -21,7 +21,7 @@ def search_file_ready(date, jins_meme_data_name=None, page_limit=100, all_flag=F
 
 """ Google Drive APIでファイルをダウンロードするさいに必要なファイルパスを取得する """
 #TODO:これ、ファイル名をGoogle Driveに保存されているファイル名の時間にしているけど大丈夫かな？ファイル名とファイル内のdateキーの時間と誤差があるため心配
-def get_download_file_path(file, jins_meme_data_name):
+def get_download_file_path(file, jins_meme_data_name, rest_flag=False):
     splited_name = file['name'].split('_')
     date_time = splited_name[0].split('-')
     year = date_time[0][0:4]
@@ -30,17 +30,21 @@ def get_download_file_path(file, jins_meme_data_name):
     hour = date_time[1][0:2]
     minitue = date_time[1][2:4]
     second = date_time[1][4:6]
+    file_path =  f"ditection_data/{year}/{month}/{day}/{hour}/{minitue}-{second}_{jins_meme_data_name}.csv"
+    #「休憩あり」の実験データ用パス
+    if rest_flag:
+        file_path = f"ditection_data/rest/{year}/{month}/{day}/{hour}/{minitue}-{second}_{jins_meme_data_name}.csv"
 
-    return  f"ditection_data/{year}/{month}/{day}/{hour}/{minitue}-{second}_{jins_meme_data_name}.csv"
+    return file_path
 
 """ 開始時刻を取得する """
-def get_start_time(drive, jins_meme_data_name, date_time):
+def get_start_time(drive, jins_meme_data_name, date_time, rest_flag=False):
     date, time = date_time.split()
     #page_limitで、1時間以内なら開始時刻を探せるようにした
     files = execute_search_file(drive, date, jins_meme_data_name, page_limit=60)
     if files:
         file = get_file_for_start_time(files, time)
-        download_file_path = execute_download_file(drive, file, jins_meme_data_name)
+        download_file_path = execute_download_file(drive, file, jins_meme_data_name, rest_flag=rest_flag)
         #date=[[['date', dtype=object]]]
         date = readCsv([download_file_path], ['date'])
         #日本時間に合わせる
@@ -58,8 +62,8 @@ def execute_search_file(drive, date, jins_meme_data_name, page_limit=100):
     return files
 
 """ 特定のファイルをGoogle Driveからダウンロード処理の実行 """
-def execute_download_file(drive, file, jins_meme_data_name):
-    download_file_path = get_download_file_path(file, jins_meme_data_name)
+def execute_download_file(drive, file, jins_meme_data_name, rest_flag=False):
+    download_file_path = get_download_file_path(file, jins_meme_data_name, rest_flag=rest_flag)
     check_exist_and_may_create(download_file_path)
     download_file(drive, file['id'], download_file_path)
 

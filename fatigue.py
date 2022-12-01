@@ -1,7 +1,7 @@
 import datetime, time
 from tkinter import messagebox
 from file_operation.module import *
-from my_google.my_drive.helper import get_start_time, execute_search_file, execute_download_file
+from my_google.my_drive.helper import get_start_time, execute_search_file
 from my_google.auth import Auth
 from data_edit.module import get_date_from_jins_meme_file, get_fatigue_file_path
 from dotenv import load_dotenv
@@ -12,6 +12,8 @@ def main():
     OAUTH_SECRET_PATH = os.getenv('OAUTH_SECRET_PATH')
     CLIENT_SECRET_ID_PATH = os.getenv('CLIENT_SECRET_ID_PATH')
     drive = Auth(SCOPES, OAUTH_SECRET_PATH, CLIENT_SECRET_ID_PATH, 'drive', 'v3')
+
+    rest_flag = trance_boolean(input("「休憩あり」の実験ですか。(例)yes or no\n"))
 
     jins_meme_data_name = 'summaryData'
     date_time = check_date(input('日付を入力してください(例): 20221102 12:30\n'))
@@ -36,7 +38,7 @@ def main():
             files = execute_search_file(drive, date_for_search_file, jins_meme_data_name, page_limit=1)
             date_for_file_path = get_date_from_jins_meme_file(drive, files, jins_meme_data_name)
             
-            file_path = get_fatigue_file_path(date_for_file_path)
+            file_path = get_fatigue_file_path(date_for_file_path, rest_flag=rest_flag)
             check_exist_and_may_create(file_path)
 
             print("経過時間: ")
@@ -48,6 +50,16 @@ def main():
                 file.write(fatigue)
             
             time.sleep(60)
+
+""" 「休憩あり」かの標準入力をBoolean型に変換する(ついでに入力値の正常チェック) """
+def trance_boolean(str):
+    if str == 'yes':
+        return True
+    elif str == 'no':
+        return False
+    else:
+        print('yesかnoで答えてください。')
+        exit()
 
 """ 経過時間の取得 """
 def get_pass_time(start_time, now):

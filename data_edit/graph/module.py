@@ -2,9 +2,9 @@ import glob, os
 import pandas as pd
 import matplotlib.pyplot as plt
 from file_operation.module import *
-from data_edit.module import get_date, get_fatigue_data_path, get_fatigue_data
+from data_edit.module import get_date, get_fatigue_data_path_old, get_fatigue_data
 
-def create_graph_from_ditection_data(alt_date, hours, result, colums, threshold):
+def create_graph_from_ditection_data(alt_date, hours, result, colums, threshold, rest_flag=False):
     #グラフの初期設定
     plt.rcParams['font.family'] = 'Meiryo'
 
@@ -21,7 +21,7 @@ def create_graph_from_ditection_data(alt_date, hours, result, colums, threshold)
     threshold_fatigue_relation_value = int(threshold['fatigue_relation_value'])
 
     #グラフの保存先
-    image_path = set_image_path(alt_date, hours)
+    image_path = set_image_path(alt_date, hours, rest_flag=rest_flag)
 
     #作成するグラフの実験時間に依存する変数を取得する(作成するグラフの時間の範囲に依存する)
     per_five_minute, per_ten_minute, figsize = get_shaft_interval_figsize(hours[0] == hours[-1])
@@ -75,7 +75,7 @@ def create_graph_from_ditection_data(alt_date, hours, result, colums, threshold)
     pass_timeをget_start_timeとget_pass_time関数をつかって求めるようにする。
 """
 #download_ditection_dataで取得したデータからグラフを作成するための準備
-def create_graph_from_ditection_data_ready(alt_date, hours, colums, jins_meme_data_name):
+def create_graph_from_ditection_data_ready(alt_date, hours, colums, jins_meme_data_name, rest_flag=False):
     year, month, day = get_date(alt_date)
 
     #(例)[[X1(VDT作業開始からの経過時間(5分ごと)) Y1(瞬目の間隔時間平均(5分ごと)) Z1(疲労度申告(5分ごと))], [X2 Y2 Z1],...[Xn Yn Zn]], 全てint型。
@@ -98,10 +98,14 @@ def create_graph_from_ditection_data_ready(alt_date, hours, colums, jins_meme_da
         date_blink_interval_time_per_hour_data = []
         target_pathes = glob.glob(f'./ditection_data/{year}/{month}/{day}/{hour}/*{jins_meme_data_name}.csv')
 
+        if rest_flag:
+            target_pathes = glob.glob(f'./ditection_data/rest/{year}/{month}/{day}/{hour}/*{jins_meme_data_name}.csv')
+
         if target_pathes:
             date_blink_interval_time_per_hour_data = readCsv(target_pathes, colums)
         else:
             print("指定したファイルは存在しません。恐らく時間指定を間違っているかそのようなファイルパスは存在しません。")
+            exit()
         
         if date_blink_interval_time_per_hour_data:
             #まだVDT作業開始時間を設定していない場合
@@ -131,7 +135,7 @@ def create_graph_from_ditection_data_ready(alt_date, hours, colums, jins_meme_da
                 #疲労度に関係のある指標を取得(基本はstrongBlinkIntervalAvgを使っている)
                 fatigue_relation_value = get_fatigue_relation_value(jins_meme_data_name, per_minitue_data)
 
-                fatigue_data_file_path = get_fatigue_data_path(per_minitue_data[0][0])
+                fatigue_data_file_path = get_fatigue_data_path_old(per_minitue_data[0][0], rest_flag=rest_flag)
 
                 #5分ごとに疲労度のデータ取得
                 if pass_time != 0 and pass_time % 5 == 0 and check_fatigue_data_file_path(fatigue_data_file_path):
@@ -141,7 +145,7 @@ def create_graph_from_ditection_data_ready(alt_date, hours, colums, jins_meme_da
                 date_blink_interval_time_fatigue_data.append([pass_time, fatigue_relation_value, fatigue])
 
                 #デバッグ用関数
-                start_debug(minute, pass_time, fatigue_data_file_path, fatigue)
+                #start_debug(minute, pass_time, fatigue_data_file_path, fatigue)
 
                 #瞬目の間隔時間平均の閾値を定める
                 if fatigue >= 3 and not threshold:
@@ -164,18 +168,15 @@ def get_fatigue_relation_value(jins_meme_data_name, per_minute_data):
     
     return value
 
-""" グラフ作成時に「休憩あり」か「休憩なし」か入力する際のバリデーション """
-def check_rest_or_non(input):
-    if input == 'rest' or input == 'non-rest':
-        return input
-    else:
-        print("restかnon-restで入力してください。")
-        exit()
-
 """ グラフ保存先パスの準備 """
-def set_image_path(alt_date, hours):
+def set_image_path(alt_date, hours, rest_flag=False):
     year, month, day = get_date(alt_date)
-    rest_or_non = check_rest_or_non(input("「休憩あり」か「休憩なし」か入力してください: (例) 休憩ありの場合は->rest, 休憩なしの場合は->non-rest\n"))
+    rest_or_non = None
+
+    if rest_flag:
+        rest_or_non = 'rest'
+    else:
+        rest_or_non = 'non-rest'
 
     if hours[0] == hours[-1]:
         image_path = f'./data_edit/graph/{year}/{month}/{day}/{hours[0]}/{rest_or_non}/blinkIntervalMean-fatigue.png'
@@ -199,7 +200,10 @@ def get_shaft_interval_figsize(less_than_one_hour_flag):
     
     return per_five_minute, per_ten_minute, figsize
 
-""" 疲労度のファイルが存在しているか確認する->存在していなかったら終了する """
+""" 
+    疲労度のファイルが存在しているか確認する->存在していなかったら終了する
+    pass_timeと疲労度のファイルパスがずれる(Read.MEを参考に)ことがあるので、ずれた際は例外処理(障害回復できるように)する。
+"""
 def check_fatigue_data_file_path(path):
     if os.path.exists(path):
         return True
@@ -216,3 +220,13 @@ def start_debug(minute, pass_time, fatigue_data_file_path, fatigue):
     print(fatigue_data_file_path)
     print('疲労度')
     print(fatigue)
+
+""" 「休憩あり」かの標準入力をBoolean型に変換する(ついでに入力値の正常チェック) """
+def trance_boolean(str):
+    if str == 'yes':
+        return True
+    elif str == 'no':
+        return False
+    else:
+        print('yesかnoで答えてください。')
+        exit()

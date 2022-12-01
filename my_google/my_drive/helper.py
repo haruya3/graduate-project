@@ -38,13 +38,13 @@ def get_download_file_path(file, jins_meme_data_name, rest_flag=False):
     return file_path
 
 """ 開始時刻を取得する """
-def get_start_time(drive, jins_meme_data_name, date_time):
+def get_start_time(drive, jins_meme_data_name, date_time, rest_flag=False):
     date, time = date_time.split()
     #page_limitで、1時間以内なら開始時刻を探せるようにした
     files = execute_search_file(drive, date, jins_meme_data_name, page_limit=60)
     if files:
         file = get_file_for_start_time(files, time)
-        download_file_path = execute_download_file(drive, file, jins_meme_data_name)
+        download_file_path = execute_download_file(drive, file, jins_meme_data_name, rest_flag=rest_flag)
         #date=[[['date', dtype=object]]]
         date = readCsv([download_file_path], ['date'])
         #日本時間に合わせる
@@ -62,8 +62,8 @@ def execute_search_file(drive, date, jins_meme_data_name, page_limit=100):
     return files
 
 """ 特定のファイルをGoogle Driveからダウンロード処理の実行 """
-def execute_download_file(drive, file, jins_meme_data_name):
-    download_file_path = get_download_file_path(file, jins_meme_data_name)
+def execute_download_file(drive, file, jins_meme_data_name, rest_flag=False):
+    download_file_path = get_download_file_path(file, jins_meme_data_name, rest_flag=rest_flag)
     check_exist_and_may_create(download_file_path)
     download_file(drive, file['id'], download_file_path)
 

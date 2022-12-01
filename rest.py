@@ -16,7 +16,7 @@ def main():
     jins_meme_data_name = 'summaryData'
     
     date_time = check_date(input('日付を入力してください(例): 20221102 12:30\n'))
-    start_time = get_start_time(drive, jins_meme_data_name, date_time)
+    start_time = get_start_time(drive, jins_meme_data_name, date_time, rest_flag=True)
     date = start_time.date().strftime('%Y%m%d')
     pass_time = None
     fatigue = 1
@@ -31,8 +31,7 @@ def main():
         #今のJins memeのCSVファイルを取得
         files = execute_search_file(drive, date, jins_meme_data_name, page_limit=1)
         if files:
-            download_file_pathes.append(execute_download_file(drive, files[0], jins_meme_data_name))
-            
+            download_file_pathes.append(execute_download_file(drive, files[0], jins_meme_data_name, rest_flag=True))
             #今の瞬目の間隔時間平均値を取得
             fatigue_relation_value_multi_array = readCsv(download_file_pathes, [os.getenv('FATIGUE_RELATION_VALUE')])
             fatigue_relation_value = list(itertools.chain.from_iterable(fatigue_relation_value_multi_array))
@@ -42,7 +41,7 @@ def main():
                 #今の疲労度を取得する
                 time.sleep(30)
                 date_from_jins_meme_file = get_date_from_jins_meme_file(drive, files, jins_meme_data_name)
-                fatigue = get_fatigue_data(get_fatigue_file_path(date_from_jins_meme_file))
+                fatigue = get_fatigue_data(get_fatigue_file_path(date_from_jins_meme_file, rest_flag=True))
 
             if rest_flag:
                 print("休憩中の計測情報")

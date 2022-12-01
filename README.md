@@ -27,6 +27,11 @@ python main.py -w yyyymmdd -cG
 ```
 どのデータでグラフを作るかは、日付の指定と時間の指定もできる。例えば、`15`とすれば15時での実験の結果のグラフを作成する。`15-16`とすれば、15時から16時での実験の結果のグラフを作成する。注意点は、**この場合実験開始時刻が15時なので`16`と指定はできない**(プログラムは実行されない)。`keyword`で作るグラフのデータも変更できる。
 
+### 疲労度のファイルパス
+疲労度のファイルパスはJins memeがGoogle Driveに作成したCSVファイルの中にある`date`キーの値(時間)を使っている。また、`pass_time`という経過時間は`datetime.datetime.now`と`start_time`([`get_start_time`というコードを参考](https://github.com/haruya3/graduate-project/blob/master/my_google/my_drive/helper.py#L37))を元にしている。**この`date`キーの値と`pass_time`の値にはずれが生じることがある**。`date`キーの時間が`datetime.datetime.now`と1分ほどずれる時があり、それによって5分毎に疲労度のファイルパスを読み取る処理で疲労度のファイルパスもずれてしまい読みこめない。
+#### そこで読み込めなかった疲労度のファイルパスを表示することで、そのファイルパスを1分ほどずらせば読み込めるようにできるよう改良した。
+ファイルパスを1分ずらせば`date`キーのずれを解消して`pass_time`で5分毎のタイミングに合わせることができる。
+
 ## 表の作成
 ```bash
 python main.py -w yyyymmdd -cT

@@ -19,8 +19,11 @@ def main():
     start_time = get_start_time(drive, jins_meme_data_name, date_time)
     date = start_time.date().strftime('%Y%m%d')
     pass_time = None
+    fatigue = 1
     download_file_pathes = []
     rest_flag = False
+
+    print(f"開始時刻: {start_time}")
     #こういうdict式ではなくデータクラスにした方がエラー検知できる(キー名のタイプミスdictだとスルーされる)
     while True:
         now = datetime.datetime.now()
@@ -35,12 +38,16 @@ def main():
             fatigue_relation_value = list(itertools.chain.from_iterable(fatigue_relation_value_multi_array))
             rest_flag = compare_blink_interval_threshold(fatigue_relation_value[0][0], int(os.getenv('BLINK_INTERVAL_THRESHOLD')), rest_flag)
             
-            #今の疲労度を取得する
-            date_from_jins_meme_file = get_date_from_jins_meme_file(drive, files, jins_meme_data_name)
-            fatigue = get_fatigue_data(get_fatigue_file_path(date_from_jins_meme_file))
+            if pass_time != 0 and pass_time % 5 == 0:
+                #今の疲労度を取得する
+                time.sleep(30)
+                date_from_jins_meme_file = get_date_from_jins_meme_file(drive, files, jins_meme_data_name)
+                fatigue = get_fatigue_data(get_fatigue_file_path(date_from_jins_meme_file))
+
             if rest_flag:
                 print("休憩中の計測情報")
             rest_process(pass_time, fatigue_relation_value[0][0], fatigue)
+            print()
         else:
             print(f'{date}についてのファイルが存在しません。')
         time.sleep(60)
@@ -54,11 +61,12 @@ def get_pass_time(start_time, now):
     return hour * 60 + minute
 
 """ 今の瞬目の間隔時間平均値と閾値を比較する """
+#TODO:通知は一回したら、休憩終わるまで通知しないとかにする。
 def compare_blink_interval_threshold(value, threshold, rest_flag):
     if not rest_flag and value >= threshold:
         messagebox.showinfo('休憩通知','疲れが取れるまで休憩したほうがよいです。')
         rest_flag = True
-    elif rest_flag and value <= threshold:
+    elif rest_flag and value < threshold:
         messagebox.showinfo('再開通知','疲れが取れたようなので作業を再開可能です。')
         rest_flag = False
         print("休憩を終了します。休憩終了時の計測情報")

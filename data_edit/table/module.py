@@ -32,7 +32,7 @@ def create_blink_interval_time_amplitude_table(date, jins_meme_data_name):
 """ 疲労度ごとの瞬目の間隔時間平均の関係を作成(dict形式) """
 def ready_blink_interval_at_fatigue_hash(date, jins_meme_data_name):
     year, month, _ = get_date(date)
-    target_pathes = glob.glob(f'./ditection_data/{year}/{month}/*/*/*{jins_meme_data_name}.csv')
+    target_pathes = glob.glob(f'./ditection_data/{year}/*/*/*/*{jins_meme_data_name}.csv')
     colums = ['date', 'strongBlinkIntervalAvg']
     date_blink_interval_list = readCsv(target_pathes, colums)
     
@@ -49,10 +49,8 @@ def ready_blink_interval_at_fatigue_hash(date, jins_meme_data_name):
                 #特殊なフィルター(不正なデータを取り除く)
                 if fatigue == 2 and date_blink_interval[1] > float(os.getenv('FATIGUE_TWO_FILTER')):
                     continue
-                #疲労度3になった時は瞬目の間隔時間平均値が4の時が圧倒的に多いため
                 if fatigue == 3 and date_blink_interval[1] < float(os.getenv('FATIGUE_THREE_FILTER')):
                     continue
-                #疲労度2の時の瞬目の間隔時間平均値が4.8なのでそれ以下は除外する
                 if fatigue == 4 and date_blink_interval[1] <= float(os.getenv('FATIGUE_FOURTH_FILTER')):
                     continue
                 blink_interval_at_fatigue_hash[fatigue].append(date_blink_interval[1])

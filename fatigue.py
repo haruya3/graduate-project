@@ -17,8 +17,9 @@ def main():
     date_time = check_date(input('日付を入力してください(例): 20221102 12:30\n'))
 
     start_time = get_start_time(drive, jins_meme_data_name, date_time)
-    print("start_time")
-    print(start_time)
+    print(f"開始時刻: {start_time}")
+    pass_time = None
+
     date_for_search_file = start_time.date().strftime('%Y%m%d')
     while True:
         now = datetime.datetime.now()

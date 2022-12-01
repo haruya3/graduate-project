@@ -22,6 +22,9 @@ def get_fatigue_data_path(date_time):
 def get_fatigue_data(file_path):
     with open(file_path, 'r') as file:
         value = file.read()
+    if value == '':
+        print(f"以下のファイルが空です\n{file_path}\nファイルに疲労度を記録してください")
+        exit()
     return int(value)
 
 import datetime
@@ -47,9 +50,9 @@ def get_date_from_jins_meme_file(drive, files, jins_meme_data_name):
 """ 疲労度を保存するファイルパスを取得 """
 def get_fatigue_file_path(date):
     year = date.year
-    month = date.month
-    day = date.day
-    hour = date.hour
-    minute = date.minute
+    month = str(date.month).zfill(2)
+    day = str(date.day).zfill(2)
+    hour = str(date.hour).zfill(2)
+    minute = str(date.minute).zfill(2)
 
     return f'./fatigue_data/{year}/{month}/{day}/{hour}/{minute}.txt'

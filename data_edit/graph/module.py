@@ -71,6 +71,9 @@ def create_graph_from_ditection_data(alt_date, hours, result, colums, threshold)
     print('グラフの作成が出来ました。')
 
 
+""" 
+    pass_timeをget_start_timeとget_pass_time関数をつかって求めるようにする。
+"""
 #download_ditection_dataで取得したデータからグラフを作成するための準備
 def create_graph_from_ditection_data_ready(alt_date, hours, colums, jins_meme_data_name):
     year, month, day = get_date(alt_date)
@@ -116,7 +119,7 @@ def create_graph_from_ditection_data_ready(alt_date, hours, colums, jins_meme_da
                 
                 #経過時間の取得(最初のpass_timeが0となってしまうので、開始pass_timeを1にした)
                 if hour == hours[0]:
-                    pass_time = int(minute) - start_vdt_minitue + 1
+                    pass_time = int(minute) - start_vdt_minitue
                 else:
                     #時間をまたいだらそれまでの時間をセット(:例)14:06から開始して15:00までの経過時間54をwithin_hour_pass_timeに代入する
                     if not within_hour_pass_time or hour != previous_hour:
@@ -131,12 +134,15 @@ def create_graph_from_ditection_data_ready(alt_date, hours, colums, jins_meme_da
                 fatigue_data_file_path = get_fatigue_data_path(per_minitue_data[0][0])
 
                 #5分ごとに疲労度のデータ取得
-                if pass_time % 5 == 0 and os.path.exists(fatigue_data_file_path):
+                if pass_time != 0 and pass_time % 5 == 0 and check_fatigue_data_file_path(fatigue_data_file_path):
                     fatigue = get_fatigue_data(fatigue_data_file_path)
 
                 #1分ごとの経過時間・瞬目の間隔時間平均・疲労度のレコードを作成
                 date_blink_interval_time_fatigue_data.append([pass_time, fatigue_relation_value, fatigue])
-                
+
+                #デバッグ用関数
+                start_debug(minute, pass_time, fatigue_data_file_path, fatigue)
+
                 #瞬目の間隔時間平均の閾値を定める
                 if fatigue >= 3 and not threshold:
                     threshold  = {'pass_time': pass_time, 'fatigue_relation_value': fatigue_relation_value}
@@ -192,3 +198,21 @@ def get_shaft_interval_figsize(less_than_one_hour_flag):
         figsize = (12, 9)
     
     return per_five_minute, per_ten_minute, figsize
+
+""" 疲労度のファイルが存在しているか確認する->存在していなかったら終了する """
+def check_fatigue_data_file_path(path):
+    if os.path.exists(path):
+        return True
+    else:
+        print(f"以下の疲労度のファイルが存在しません。\n{path}")
+        print('恐らくファイルの時間と経過時間に対応していない(ずれている)可能性があるのでファイル名を修正してください')
+        exit()
+
+""" デバッグ用の関数(グラフが作成できない・疲労度が3を超えているはずなのに超えていない時などに使える) """
+def start_debug(minute, pass_time, fatigue_data_file_path, fatigue):
+    print(minute)
+    print('経過時間')
+    print(pass_time)
+    print(fatigue_data_file_path)
+    print('疲労度')
+    print(fatigue)

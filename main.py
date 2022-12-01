@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 import os
 
+#TODO:下位層でexitで握り潰しが多いので、せめてトレースを出力して終了するようにする。
 def main(date, download_flag, delete_flag, create_graph_flag, create_table_flag):
     #グーグルサービスクライアント初期化
     SCOPES = [os.getenv('SCOPE')]
@@ -77,6 +78,10 @@ def create_graph_from_ditection_data_flow(date, jins_meme_data_name):
 
     result, threshold = create_graph_from_ditection_data_ready(date, hours, csv_colums, jins_meme_data_name=jins_meme_data_name)
 
+    if not threshold:
+        print("疲労度3に達していません。デフォルトの閾値(4)を設定します")
+        threshold['fatigue_relation_value'] = os.getenv('BLINK_INTERVAL_THRESHOLD')
+        threshold['pass_time'] = os.getenv('THRESHOLD_DEFAULT_PASS_TIME')
     create_graph_from_ditection_data(date, hours, result, graph_colums, threshold)
 
 """ 疲労度ごとの瞬目の間隔時間平均の振り幅の表作成 """

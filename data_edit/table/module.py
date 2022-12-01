@@ -1,15 +1,15 @@
 import os, glob
 from statistics import mean
 from tabulate import tabulate
-from data_edit.module import get_date, get_fatigue_data_path, get_fatigue_data
+from data_edit.module import get_date, get_fatigue_data_path_old, get_fatigue_data
 from file_operation.module import readCsv
 from dotenv import load_dotenv
 load_dotenv()
 
 """ 疲労度ごとの瞬目の間隔時間平均の振り幅の表作成 """
-def create_blink_interval_time_amplitude_table(date, jins_meme_data_name):
+def create_blink_interval_time_amplitude_table(date, jins_meme_data_name, rest_flag):
     #疲労度ごとの瞬目の間隔時間平均値のhashを取得
-    blink_interval_at_fatigue_hash = ready_blink_interval_at_fatigue_hash(date, jins_meme_data_name)
+    blink_interval_at_fatigue_hash = ready_blink_interval_at_fatigue_hash(date, jins_meme_data_name, rest_flag=rest_flag)
     #取得したhashの分析
     blink_interval_at_fatigue_minimum_max, blink_interval_at_fatigue_average = analyze_blink_interval_at_fatigue(blink_interval_at_fatigue_hash)
     
@@ -30,9 +30,13 @@ def create_blink_interval_time_amplitude_table(date, jins_meme_data_name):
     return table_minimum_max, table_average
 
 """ 疲労度ごとの瞬目の間隔時間平均の関係を作成(dict形式) """
-def ready_blink_interval_at_fatigue_hash(date, jins_meme_data_name):
+def ready_blink_interval_at_fatigue_hash(date, jins_meme_data_name, rest_flag):
     year, month, _ = get_date(date)
     target_pathes = glob.glob(f'./ditection_data/{year}/*/*/*/*{jins_meme_data_name}.csv')
+    
+    if rest_flag:
+        target_pathes= glob.glob(f'./ditection_data/rest/{year}/*/*/*/*{jins_meme_data_name}.csv')
+
     colums = ['date', 'strongBlinkIntervalAvg']
     date_blink_interval_list = readCsv(target_pathes, colums)
     
@@ -43,7 +47,8 @@ def ready_blink_interval_at_fatigue_hash(date, jins_meme_data_name):
 
     for date_blink_interval in [value[0] for value in date_blink_interval_list]:
         if len(date_blink_interval) != 0:
-            fatigue_data_path = get_fatigue_data_path(date_blink_interval[0])
+            fatigue_data_path = get_fatigue_data_path_old(date_blink_interval[0], rest_flag=rest_flag)
+            #毎分ごとのdate_blink_intervalをfor文で回すため疲労度のファイルパスが存在する時は必ずある。
             if os.path.exists(fatigue_data_path):
                 fatigue = get_fatigue_data(fatigue_data_path)
                 #特殊なフィルター(不正なデータを取り除く)

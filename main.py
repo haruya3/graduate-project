@@ -45,7 +45,12 @@ def download_ditection_data_flow(drive, date, jins_meme_data_name):
     if files:
         for file in files:
             download_file_path = get_download_file_path(file, jins_meme_data_name, rest_flag)
-            hour = int(download_file_path[26:28])
+
+            if rest_flag:
+                hour = int(download_file_path[31:33])
+            else:
+                hour = int(download_file_path[26:28])                
+
             check_exist_and_may_create(download_file_path)
             
             if start_specify_hour > hour or hour > end_specify_hour:

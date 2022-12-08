@@ -22,9 +22,9 @@ from my_google.my_drive.helper import execute_download_file
     Jins memeでGoogle Driveに作成されたCSVファイルのdateキーから時間を取得する
     これをfatigue保存先パスで使うことでfatigueファイルを読み込む(graph/module.pyで5分ごと(このpass_timeもCSVファイルのdateキーの値)に読み込む際に)際の誤差がなくなる
 """
-def get_date_from_jins_meme_file(drive, files, jins_meme_data_name):
+def get_date_from_jins_meme_file(drive, files, jins_meme_data_name, rest_flag=False):
     if files:
-        download_file_path = execute_download_file(drive, files[0], jins_meme_data_name)
+        download_file_path = execute_download_file(drive, files[0], jins_meme_data_name, rest_flag=rest_flag)
         #date=[[['date', dtype=object]]]
         date = readCsv([download_file_path], ['date'])
         #日本時間に合わせる

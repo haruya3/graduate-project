@@ -20,12 +20,12 @@ def main():
     date = start_time.date().strftime('%Y%m%d')
     pass_time = None
     fatigue = 1
-    download_file_pathes = []
     rest_flag = False
 
     print(f"開始時刻: {start_time}")
     #こういうdict式ではなくデータクラスにした方がエラー検知できる(キー名のタイプミスdictだとスルーされる)
     while True:
+        download_file_pathes = []
         now = datetime.datetime.now()
         pass_time = get_pass_time(start_time, now)
         #今のJins memeのCSVファイルを取得
@@ -40,8 +40,14 @@ def main():
             if pass_time != 0 and pass_time % 5 == 0:
                 #今の疲労度を取得する
                 time.sleep(30)
-                date_from_jins_meme_file = get_date_from_jins_meme_file(drive, files, jins_meme_data_name)
-                fatigue = get_fatigue_data(get_fatigue_file_path(date_from_jins_meme_file, rest_flag=True))
+                #TODO:すでにダウンロード済みなので以下でまたダウンロードする必要性はないので処理を変更する
+                date_from_jins_meme_file = get_date_from_jins_meme_file(drive, files, jins_meme_data_name, rest_flag=rest_flag)
+                fatigue_file_path = get_fatigue_file_path(date_from_jins_meme_file, rest_flag=True)
+                if os.path.exists(fatigue_file_path):
+                    fatigue = get_fatigue_data(fatigue_file_path)
+                else:
+                    print(f"以下の疲労度のファイルは存在しませんでした。5分前の疲労度を表示します。\n{fatigue_file_path}")
+                    pass
 
             if rest_flag:
                 print("休憩中の計測情報")

@@ -36,7 +36,7 @@ def main():
                 print("終了します")
                 exit()
             files = execute_search_file(drive, date_for_search_file, jins_meme_data_name, page_limit=1)
-            date_for_file_path = get_date_from_jins_meme_file(drive, files, jins_meme_data_name)
+            date_for_file_path = get_date_from_jins_meme_file(drive, files, jins_meme_data_name, rest_flag=rest_flag)
             
             file_path = get_fatigue_file_path(date_for_file_path, rest_flag=rest_flag)
             check_exist_and_may_create(file_path)

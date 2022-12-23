@@ -35,19 +35,27 @@ def main():
             #今の瞬目の間隔時間平均値を取得
             fatigue_relation_value_multi_array = readCsv(download_file_pathes, [os.getenv('FATIGUE_RELATION_VALUE')])
             fatigue_relation_value = list(itertools.chain.from_iterable(fatigue_relation_value_multi_array))
-            rest_flag = compare_blink_interval_threshold(fatigue_relation_value[0][0], int(os.getenv('BLINK_INTERVAL_THRESHOLD')), rest_flag)
+            rest_flag = compare_blink_interval_threshold(fatigue_relation_value[0][0], float(os.getenv('BLINK_INTERVAL_THRESHOLD')), rest_flag)
             
             if pass_time != 0 and pass_time % 5 == 0:
-                #今の疲労度を取得する
-                time.sleep(30)
+                #今の疲労度を取得するため、疲労度の記録ファイルが作成されるのを待つ
+                time.sleep(20)
                 #TODO:すでにダウンロード済みなので以下でまたダウンロードする必要性はないので処理を変更する
                 date_from_jins_meme_file = get_date_from_jins_meme_file(drive, files, jins_meme_data_name, rest_flag=rest_flag)
                 fatigue_file_path = get_fatigue_file_path(date_from_jins_meme_file, rest_flag=True)
-                if os.path.exists(fatigue_file_path):
-                    fatigue = get_fatigue_data(fatigue_file_path)
-                else:
-                    print(f"以下の疲労度のファイルは存在しませんでした。5分前の疲労度を表示します。\n{fatigue_file_path}")
-                    pass
+                count_per_five_second = 0
+                #疲労度の取得(リトライ処理は5秒間に一回する、30秒経ったらリトライ処理は終了)
+                while True:
+                    if count_per_five_second == 6:
+                        break
+
+                    if os.path.exists(fatigue_file_path):
+                        time.sleep(3)
+                        fatigue = get_fatigue_data(fatigue_file_path)
+                    else:
+                        print(f"以下の疲労度のファイルは存在しませんでした。ファイル名を以下に表示するものに変更してください。なお、35秒内に変更されない場合は5分前の疲労度になります。\n{fatigue_file_path}")
+                    time.sleep(5)
+                    count_per_five_second += 1
 
             if rest_flag:
                 print("休憩中の計測情報")
@@ -66,18 +74,19 @@ def get_pass_time(start_time, now):
     return hour * 60 + minute
 
 """ 今の瞬目の間隔時間平均値と閾値を比較する """
-#TODO:通知は一回したら、休憩終わるまで通知しないとかにする。
 def compare_blink_interval_threshold(value, threshold, rest_flag):
     if not rest_flag and value >= threshold:
         messagebox.showinfo('休憩通知','疲れが取れるまで休憩したほうがよいです。')
         rest_flag = True
-    elif rest_flag and value < threshold:
-        messagebox.showinfo('再開通知','疲れが取れたようなので作業を再開可能です。')
-        rest_flag = False
-        print("休憩を終了します。休憩終了時の計測情報")
+    elif rest_flag and value < int(os.getenv('BLINK_INTERVAL_THRESHOLD_RESTART')):
+        if int(input("疲労度を入力してください")) < 3:
+            messagebox.showinfo('再開通知','疲れが取れたようなので作業を再開可能です。')
+            rest_flag = False
+            print("休憩を終了します。休憩終了時の計測情報")
     return rest_flag
 
 """ 休憩前後に行う処理 """
+#TODO:名前が良くない変える
 def rest_process(pass_time, fatigue_relation_value, fatigue):
     print(f"経過時間: {pass_time}分")
     print(f"瞬目の間隔時間平均値: {fatigue_relation_value}")

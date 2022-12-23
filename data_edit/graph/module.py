@@ -25,11 +25,10 @@ def create_graph_from_ditection_data(alt_date, hours, result, colums, threshold,
 
     #作成するグラフの実験時間に依存する変数を取得する(作成するグラフの時間の範囲に依存する)
     per_five_minute, per_ten_minute, figsize = get_shaft_interval_figsize(hours[0] == hours[-1])
-
     df = pd.DataFrame(data=result, columns=colums)
 
     #サブプロット作成
-    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=figsize)
+    fig, axes = plt.subplots(nrows=1, ncols=3, figsize=figsize)
     plt.subplots_adjust(wspace=0.6)
 
     #経過時間と瞬目の間隔時間平均のグラフについて
@@ -66,10 +65,17 @@ def create_graph_from_ditection_data(alt_date, hours, result, colums, threshold,
         xticks= per_ten_minute,
         yticks= range(1, 6)
     )
+    
+    #TODO:グラフのメモリを指定する方法調べる、横軸疲労度にする必要がある
+    df.plot.scatter(
+        x=colums[2], 
+        y=colums[1],
+        ax=axes[2]
+    )
 
     fig.savefig(image_path)
-    print('グラフの作成が出来ました。')
 
+    print('グラフの作成が出来ました。')
 
 """ 
     pass_timeをget_start_timeとget_pass_time関数をつかって求めるようにする。
@@ -82,7 +88,7 @@ def create_graph_from_ditection_data_ready(alt_date, hours, colums, jins_meme_da
     date_blink_interval_time_fatigue_data = []
     pass_time = 0
     #疲労度
-    fatigue = 0
+    fatigue = 1
     #VDT作業開始時間
     start_vdt_minitue = 0
     #瞬目の間隔時間平均の閾値
@@ -193,10 +199,10 @@ def get_shaft_interval_figsize(less_than_one_hour_flag):
 
     if less_than_one_hour_flag:
         per_ten_minute = list(filter(lambda x: x % 5 == 0, range(0, 61)))
-        figsize = (9, 6)
+        figsize = (12, 9)
     else:
         per_ten_minute = list(filter(lambda x: x % 10 == 0, range(0, 121)))
-        figsize = (12, 9)
+        figsize = (15, 12)
     
     return per_five_minute, per_ten_minute, figsize
 
@@ -221,12 +227,91 @@ def start_debug(minute, pass_time, fatigue_data_file_path, fatigue):
     print('疲労度')
     print(fatigue)
 
-""" 「休憩あり」かの標準入力をBoolean型に変換する(ついでに入力値の正常チェック) """
-def trance_boolean(str):
-    if str == 'yes':
-        return True
-    elif str == 'no':
-        return False
-    else:
-        print('yesかnoで答えてください。')
-        exit()
+""" 
+    ヒストグラムの作成
+    table.moduleから呼び出される 
+"""
+#TODO:現状うまくグラフ作成できていないので時間ある時修正する->ヒストグラム作成できるｗｅｂサイトあるのでそこで作成した方が早いから
+def plot_hist(data_hash, colums, xticks_at_fatigue):
+    #グラフの初期設定
+    plt.rcParams['font.family'] = 'Meiryo'
+    plt.subplots_adjust(wspace=1.5)
+
+    fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(18, 15))
+    saving_path = f'./data_edit/graph/hist.png'
+    check_exist_and_may_create(saving_path)
+    i = 0
+    k = 0
+
+    ####TODO:なぜか、うまくデータの表示ができない。。・。。
+    for key, value in data_hash.items():
+        df = pd.DataFrame(data=value, columns=colums)
+        #MEMO:これは手動でヒストグラム作る際にデータ表示のために使う。
+        #print(df)
+        print(key)
+        print(df)
+        xticks = xticks_at_fatigue[key-1][key]
+        df.plot(
+            title=f'疲労度{key}についての各瞬目の間隔時間平均値の個数',
+            ax=axes[i][k],
+            x=colums[0], 
+            y=colums[1],
+            xlabel='瞬目の間隔時間平均(0.5単位に丸めている)',
+            ylabel='個数',
+            xticks=xticks,
+            yticks= range(1, 11),
+            xlim=[xticks[0], xticks[-1]],
+            kind='hist'
+        )
+        if k == 2:
+            i += 1
+            k = 0
+        else:
+            k += 1
+
+    fig.savefig(saving_path)
+    print('ヒストグラムの作成ができました')
+
+
+""" 
+    ハッシュデータから用途はデータフレームを作成する 
+    今のところヒストグラム作成の手動作成したい時の分かりやすいデータ表示のために使う。
+"""
+def create_dataframe(data_hash, colums):
+    result = []
+    for _, value in data_hash.items():
+        df = pd.DataFrame(data=value, columns=colums)
+        result.append(df)
+    return result
+
+""" 
+    今のところテーブル作成する際にだけ使われる
+    疲労度と瞬目の間隔時間の相関図作成
+"""
+def plot_scatter(data, colums):
+    plt.rcParams['font.family'] = 'Meiryo'
+
+    df = pd.DataFrame(data=data, columns=colums)
+    xticks = [1, 2, 3, 4, 5]
+    df.plot.scatter(
+        x=colums[0], 
+        y=colums[1],
+        xlabel='疲労度',
+        ylabel='瞬目の間隔時間',
+        xticks=xticks
+    )
+    plt.show()
+
+def plot_average_blink_interval_at_fatigue(data, colums):
+    plt.rcParams['font.family'] = 'Meiryo'
+    df = pd.DataFrame(data=data, columns=colums)
+    xticks = [1, 2, 3, 4, 5]
+
+    df.plot(
+        x=colums[0],
+        y=colums[1],
+        xlabel='疲労度',
+        ylabel='瞬目の間隔時間の平均値',
+        xticks=xticks
+    )
+    plt.show()

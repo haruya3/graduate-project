@@ -3,14 +3,16 @@ from my_google.my_drive.module import *
 from my_google.my_drive.helper import search_file_ready, get_download_file_path
 from googleapiclient.errors import HttpError as HttpError
 from data_edit.graph.module import *
-from data_edit.table.module import *
+from data_edit.analyze.module import *
 from file_operation.module import check_exist_and_may_create
 from dotenv import load_dotenv
 load_dotenv()
 import os
 
+#TODO:作成したグラフや疲労度の記録ファイルはバックアップ用にS3にアップロードするのもあり
+
 #TODO:下位層でexitで握り潰しが多いので、せめてトレースを出力して終了するようにする。
-def main(date, download_flag, delete_flag, create_graph_flag, create_table_flag):
+def main(date, download_flag, delete_flag, create_graph_flag, analyze_flag):
     #グーグルサービスクライアント初期化
     SCOPES = [os.getenv('SCOPE')]
     OAUTH_SECRET_PATH = os.getenv('OAUTH_SECRET_PATH')
@@ -29,15 +31,15 @@ def main(date, download_flag, delete_flag, create_graph_flag, create_table_flag)
     if(create_graph_flag):
         create_graph_from_ditection_data_flow(str(date), jins_meme_data_name)
     
-    if(create_table_flag):
-        create_blink_interval_time_amplitude_table_flow(str(date), jins_meme_data_name)
+    if(analyze_flag):
+        analyze_blink_interval_at_fatigue_flow(str(date), jins_meme_data_name)
 
 """ Google Driveの特定のフォルダのファイルの取得 """
 def download_ditection_data_flow(drive, date, jins_meme_data_name):
     params = search_file_ready(date, jins_meme_data_name)
 
     files = search_file(drive, params['condition'], params['fields'])
-    rest_flag = trance_boolean(input("「休憩あり」の実験データとして取得しますか。(例)yes or no\n"))
+    rest_flag = trance_boolean_about_yes_and_no(input("「休憩あり」の実験データとして取得しますか。(例)yes or no\n"))
     specify_hour = input("何時データを取得するか指定しください。(例)10時から12時のデータ->10-12\n").split('-')
     start_specify_hour = int(specify_hour[0])
     end_specify_hour = int(specify_hour[-1])
@@ -90,7 +92,7 @@ def create_graph_from_ditection_data_flow(date, jins_meme_data_name):
     
     #ユーザ入力項目
     hours = list(map(lambda x: int(x), input("時間範囲を指定してください(例)12時から15時なら12-15, 1時なら01とする\n").split('-')))
-    rest_flag = trance_boolean(input("「休憩あり」の実験ですか。(例)yes or no\n"))
+    rest_flag = trance_boolean_about_yes_and_no(input("「休憩あり」の実験ですか。(例)yes or no\n"))
 
     result, threshold = create_graph_from_ditection_data_ready(date, hours, csv_colums, jins_meme_data_name=jins_meme_data_name, rest_flag=rest_flag)
 
@@ -100,16 +102,37 @@ def create_graph_from_ditection_data_flow(date, jins_meme_data_name):
         threshold['pass_time'] = os.getenv('THRESHOLD_DEFAULT_PASS_TIME')
     create_graph_from_ditection_data(date, hours, result, graph_colums, threshold, rest_flag=rest_flag)
 
-""" 疲労度ごとの瞬目の間隔時間平均の振り幅の表作成 """
-def create_blink_interval_time_amplitude_table_flow(date, jins_meme_data_name): 
-    rest_flag = trance_boolean(input("「休憩あり」の実験ですか。(例)yes or no\n"))
-    table_minimum_max, table_average = create_blink_interval_time_amplitude_table(date, jins_meme_data_name, rest_flag=rest_flag)
-    print(table_minimum_max)
-    print(table_average)
+""" 疲労度ごとの瞬目の間隔時間平均値について分析する """
+def analyze_blink_interval_at_fatigue_flow(date, jins_meme_data_name): 
+    rest_flag = trance_boolean_about_yes_and_no(input("「休憩あり」の実験ですか。(例)yes or no\n"))
+    table_minimum_max, table_average, blink_interval_at_fatigue_minimum_max, blink_interval_at_fatigue_average, list_dataframe_for_hist, point_five_blink_interval_at_fatigue_hist, blink_interval_at_fatigue_for_plot = analyze_blink_interval_at_fatigue(date, jins_meme_data_name, rest_flag=rest_flag)
+
+    #TODO:ここ、今のところ全部一括で実行しているがanalyze/module.pyで関数ごとに分析処理を切り分けて個々で実行できるようにした方がよいね
+    if trance_boolean_about_yes_and_no(input("疲労度ごとの瞬目の間隔時間平均値の最大値・最小値と平均値のテーブルを表示しますか？(yes or no)\n")):        
+        print(table_minimum_max)
+        print(table_average)
+    
+    if trance_boolean_about_yes_and_no(input("疲労度ごとの瞬目の間隔時間平均値の最大値・最小値と平均値を表示しますか？(yes or no)\n")):
+        print('[最小値, 最大値]')
+        print(blink_interval_at_fatigue_minimum_max)
+        print('平均値')
+        print(blink_interval_at_fatigue_average)
+
+    if trance_boolean_about_yes_and_no(input("疲労度ごとの瞬目の間隔時間平均値のヒストグラムを作成するためのデータを表示しますか？(yes or no)\n")):
+        for dataframe_for_hist in list_dataframe_for_hist:
+            print(dataframe_for_hist)
+
+    if trance_boolean_about_yes_and_no(input("疲労度ごとの瞬目の間隔時間平均値(60秒ごとの平均)の平均値のグラフを表示しますか？(yes or no)\n")):
+        plot_data_frame_colums = ['疲労度', '瞬目の間隔時間の平均値']
+        plot_average_blink_interval_at_fatigue(blink_interval_at_fatigue_for_plot, plot_data_frame_colums)
+
+    if trance_boolean_about_yes_and_no(input("疲労度と瞬目の間隔時間平均値の相関図を表示しますか？(yes or no)\n")):
+        scatter_data_frame_colums = ['疲労度', '瞬目の間隔時間']
+        plot_scatter_flow(point_five_blink_interval_at_fatigue_hist, scatter_data_frame_colums)
 
 
 """ 「休憩あり」かの標準入力をBoolean型に変換する(ついでに入力値の正常チェック) """
-def trance_boolean(str):
+def trance_boolean_about_yes_and_no(str):
     if str == 'yes':
         return True
     elif str == 'no':
@@ -126,7 +149,7 @@ def set_args():
     parser.add_argument("-d", "--download", help="データを取得する", action='store_true')
     parser.add_argument("-D", "--delete", help="データを削除する", action='store_true')
     parser.add_argument("-cG", "--createGraph", help="取得したデータからグラフを作成する", action='store_true')
-    parser.add_argument("-cT", "--createTable", help="取得したデータからグラフを作成する", action='store_true')
+    parser.add_argument("-a", "--analyze", help="取得したデータからグラフを作成する", action='store_true')
     return parser.parse_args()
 
 def check_google_drive_action(*actions):
@@ -141,6 +164,6 @@ def check_google_drive_action(*actions):
 
 if __name__ == '__main__':
     args = set_args()
-    check_google_drive_action(args.download, args.delete, args.createGraph, args.createTable)
+    check_google_drive_action(args.download, args.delete, args.createGraph, args.analyze)
 
-    main(args.when, args.download, args.delete, args.createGraph, args.createTable)
+    main(args.when, args.download, args.delete, args.createGraph, args.analyze)

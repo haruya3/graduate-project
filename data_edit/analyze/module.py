@@ -41,7 +41,7 @@ def analyze_blink_interval_at_fatigue(date, jins_meme_data_name, rest_flag):
 
 """ 疲労度ごとの瞬目の間隔時間平均の関係を作成(dict形式) """
 def ready_blink_interval_at_fatigue_hash(date, jins_meme_data_name, rest_flag):
-    year, month, _ = get_date(date)
+    year, _, _ = get_date(date)
     target_pathes = glob.glob(f'./ditection_data/{year}/*/*/*/*{jins_meme_data_name}.csv')
     
     if rest_flag:
@@ -143,5 +143,4 @@ def plot_scatter_flow(data_hash, colums):
         for blink_interval, _ in blink_interva_count_hash.items():
             fatigue_blink_interval_array.append([fatigue, blink_interval])
     
-    print(fatigue_blink_interval_array)
     plot_scatter(fatigue_blink_interval_array, colums)

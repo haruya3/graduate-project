@@ -44,24 +44,25 @@ def download_ditection_data_flow(drive, date, jins_meme_data_name):
     start_specify_hour = int(specify_hour[0])
     end_specify_hour = int(specify_hour[-1])
 
-    if files:
-        for file in files:
-            download_file_path = get_download_file_path(file, jins_meme_data_name, rest_flag)
+    if not files:
+        print("指定した条件に一致するファイルは見つかりませんでいた。終了します。")
+        exit()
 
-            if rest_flag:
-                hour = int(download_file_path[31:33])
-            else:
-                hour = int(download_file_path[26:28])                
+    for file in files:
+        download_file_path = get_download_file_path(file, jins_meme_data_name, rest_flag)
 
-            check_exist_and_may_create(download_file_path)
+        if rest_flag:
+            hour = int(download_file_path[31:33])
+        else:
+            hour = int(download_file_path[26:28])                
+
+        check_exist_and_may_create(download_file_path)
+        
+        if start_specify_hour > hour or hour > end_specify_hour:
+            print(download_file_path)
+            continue
             
-            if start_specify_hour > hour or hour > end_specify_hour:
-                print(download_file_path)
-                continue
-                
-            download_file(drive, file['id'], download_file_path)
-    else:
-        print("指定した条件に一致するファイルは見つかりませんでいた。")
+        download_file(drive, file['id'], download_file_path)
 
 """ Google Driveの特定のフォルダのファイルの削除 """
 def delete_ditection_data_flow(drive, date):
@@ -69,20 +70,21 @@ def delete_ditection_data_flow(drive, date):
     files = search_file(drive, params['condition'], params['fields'])
     delete_file_count = 0
 
-    if files:
-        print(f'{date}についてのファイルは{len(files)}個あります。')
-        for index, file in enumerate(files):
-            delete_file(drive, file['id'])
-            if index % 10 == 0:
-                print(f'ファイル削除数: {index}個')
-            if index == 100:
-                delete_file_count = index
-                break
-        
-        print(f'{date}についての{delete_file_count}個のファイルの削除が完了しました。')
-        print(f'{date}の残りファイル数は{len(files) - delete_file_count}個です。')
-    else:
-        print("指定した条件に一致するファイルは見つかりませんでいた。")
+    if not files:
+        print("指定した条件に一致するファイルは見つかりませんでいた。終了します。")
+        exit()
+
+    print(f'{date}についてのファイルは{len(files)}個あります。')
+    for file_count, file in enumerate(files):
+        delete_file(drive, file['id'])
+        if file_count % 10 == 0:
+            print(f'ファイル削除数: {file_count}個')
+        if file_count == 100:
+            delete_file_count = file_count
+            break
+    
+    print(f'{date}についての{delete_file_count}個のファイルの削除が完了しました。')
+    print(f'{date}の残りファイル数は{len(files) - delete_file_count}個です。')
 
 """ Jins memeのデータでグラフ作成 """
 def create_graph_from_ditection_data_flow(date, jins_meme_data_name):

@@ -30,39 +30,42 @@ def main():
         pass_time = get_pass_time(start_time, now)
         #今のJins memeのCSVファイルを取得
         files = execute_search_file(drive, date, jins_meme_data_name, page_limit=1)
-        if files:
-            download_file_pathes.append(execute_download_file(drive, files[0], jins_meme_data_name, rest_flag=True))
-            #今の瞬目の間隔時間平均値を取得
-            fatigue_relation_value_multi_array = readCsv(download_file_pathes, [os.getenv('FATIGUE_RELATION_VALUE')])
-            fatigue_relation_value = list(itertools.chain.from_iterable(fatigue_relation_value_multi_array))
-            rest_flag = compare_blink_interval_threshold(fatigue_relation_value[0][0], float(os.getenv('BLINK_INTERVAL_THRESHOLD')), rest_flag)
-            
-            if pass_time != 0 and pass_time % 5 == 0:
-                #今の疲労度を取得するため、疲労度の記録ファイルが作成されるのを待つ
-                time.sleep(20)
-                #TODO:すでにダウンロード済みなので以下でまたダウンロードする必要性はないので処理を変更する
-                date_from_jins_meme_file = get_date_from_jins_meme_file(drive, files, jins_meme_data_name, rest_flag=rest_flag)
-                fatigue_file_path = get_fatigue_file_path(date_from_jins_meme_file, rest_flag=True)
-                count_per_five_second = 0
-                #疲労度の取得(リトライ処理は5秒間に一回する、30秒経ったらリトライ処理は終了)
-                while True:
-                    if count_per_five_second == 6:
-                        break
+        
+        if not files:
+            print(f'{date}についてのファイルが存在しません。終了します。')
+            exit()
 
-                    if os.path.exists(fatigue_file_path):
-                        time.sleep(3)
-                        fatigue = get_fatigue_data(fatigue_file_path)
-                    else:
-                        print(f"以下の疲労度のファイルは存在しませんでした。ファイル名を以下に表示するものに変更してください。なお、35秒内に変更されない場合は5分前の疲労度になります。\n{fatigue_file_path}")
-                    time.sleep(5)
-                    count_per_five_second += 1
+        download_file_pathes.append(execute_download_file(drive, files[0], jins_meme_data_name, rest_flag=True))
+        #今の瞬目の間隔時間平均値を取得
+        fatigue_relation_value_multi_array = readCsv(download_file_pathes, [os.getenv('FATIGUE_RELATION_VALUE')])
+        fatigue_relation_value = list(itertools.chain.from_iterable(fatigue_relation_value_multi_array))
+        rest_flag = compare_blink_interval_threshold(fatigue_relation_value[0][0], float(os.getenv('BLINK_INTERVAL_THRESHOLD')), rest_flag)
+        
+        if pass_time != 0 and pass_time % 5 == 0:
+            #今の疲労度を取得するため、疲労度の記録ファイルが作成されるのを待つ
+            time.sleep(20)
+            #TODO:すでにダウンロード済みなので以下でまたダウンロードする必要性はないので処理を変更する
+            date_from_jins_meme_file = get_date_from_jins_meme_file(drive, files, jins_meme_data_name, rest_flag=rest_flag)
+            fatigue_file_path = get_fatigue_file_path(date_from_jins_meme_file, rest_flag=True)
+            count_per_five_second = 0
+            #疲労度の取得(リトライ処理は5秒間に一回する、30秒経ったらリトライ処理は終了)
+            while True:
+                if count_per_five_second == 6:
+                    break
 
-            if rest_flag:
-                print("休憩中の計測情報")
-            rest_process(pass_time, fatigue_relation_value[0][0], fatigue)
-            print()
-        else:
-            print(f'{date}についてのファイルが存在しません。')
+                if os.path.exists(fatigue_file_path):
+                    time.sleep(3)
+                    fatigue = get_fatigue_data(fatigue_file_path)
+                else:
+                    print(f"以下の疲労度のファイルは存在しませんでした。ファイル名を以下に表示するものに変更してください。なお、35秒内に変更されない場合は5分前の疲労度になります。\n{fatigue_file_path}")
+                time.sleep(5)
+                count_per_five_second += 1
+
+        if rest_flag:
+            print("休憩中の計測情報")
+        rest_process(pass_time, fatigue_relation_value[0][0], fatigue)
+        print()
+
         time.sleep(60)
 
 """ 経過時間の取得 """

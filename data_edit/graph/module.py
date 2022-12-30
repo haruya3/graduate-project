@@ -107,55 +107,58 @@ def create_graph_from_ditection_data_ready(alt_date, hours, colums, jins_meme_da
         if rest_flag:
             target_pathes = glob.glob(f'./ditection_data/rest/{year}/{month}/{day}/{hour}/*{jins_meme_data_name}.csv')
 
-        if target_pathes:
-            date_blink_interval_time_per_hour_data = readCsv(target_pathes, colums)
-        else:
+        if not target_pathes:
             print("指定したファイルは存在しません。恐らく時間指定を間違っているかそのようなファイルパスは存在しません。")
             exit()
+
+        date_blink_interval_time_per_hour_data = readCsv(target_pathes, colums)
+
         
-        if date_blink_interval_time_per_hour_data:
-            #まだVDT作業開始時間を設定していない場合
-            if start_vdt_minitue == 0:
-                start_vdt_minitue = int(date_blink_interval_time_per_hour_data[0][0][0][14:16])
-            for per_minitue_data in date_blink_interval_time_per_hour_data:
-                #per_minitue_data=[[date, {jins_meme_data_name}], type=object]となっている。
-                minute = per_minitue_data[0][0][14:16]
-                #日本時間に変換
-                summary_data_hour = int(per_minitue_data[0][0][11:13]) + 9
-                
-                #たまにバグで時間(hour)をまたいだデータが入っている(date_blink_interval_time_per_hour_data)。
-                if hour != summary_data_hour:
-                    hour +=1
-                
-                #経過時間の取得(最初のpass_timeが0となってしまうので、開始pass_timeを1にした)
-                if hour == hours[0]:
-                    pass_time = int(minute) - start_vdt_minitue
-                else:
-                    #時間をまたいだらそれまでの時間をセット(:例)14:06から開始して15:00までの経過時間54をwithin_hour_pass_timeに代入する
-                    if not within_hour_pass_time or hour != previous_hour:
-                        #TODO:なぜかwithin_hour_pass_timeには+1しなきゃいけないときとしたらダメな時がある(fatigue_dataとの関連付けについての話)。
-                        within_hour_pass_time = pass_time
-                        previous_hour = hour
-                    pass_time = within_hour_pass_time +  int(minute)
+        if not date_blink_interval_time_per_hour_data:
+            print('csvファイルを読み込めていません。指定する時間に実験をしていたか確認してください。')
+            exit()
+        #まだVDT作業開始時間を設定していない場合
+        if start_vdt_minitue == 0:
+            start_vdt_minitue = int(date_blink_interval_time_per_hour_data[0][0][0][14:16])
+        for per_minitue_data in date_blink_interval_time_per_hour_data:
+            #per_minitue_data=[[date, {jins_meme_data_name}], type=object]となっている。
+            minute = per_minitue_data[0][0][14:16]
+            #日本時間に変換
+            summary_data_hour = int(per_minitue_data[0][0][11:13]) + 9
+            
+            #たまにバグで時間(hour)をまたいだデータが入っている(date_blink_interval_time_per_hour_data)。
+            if hour != summary_data_hour:
+                hour +=1
+            
+            #経過時間の取得(最初のpass_timeが0となってしまうので、開始pass_timeを1にした)
+            if hour == hours[0]:
+                pass_time = int(minute) - start_vdt_minitue
+            else:
+                #時間をまたいだらそれまでの時間をセット(:例)14:06から開始して15:00までの経過時間54をwithin_hour_pass_timeに代入する
+                if not within_hour_pass_time or hour != previous_hour:
+                    #TODO:なぜかwithin_hour_pass_timeには+1しなきゃいけないときとしたらダメな時がある(fatigue_dataとの関連付けについての話)。
+                    within_hour_pass_time = pass_time
+                    previous_hour = hour
+                pass_time = within_hour_pass_time +  int(minute)
 
-                #疲労度に関係のある指標を取得(基本はstrongBlinkIntervalAvgを使っている)
-                fatigue_relation_value = get_fatigue_relation_value(jins_meme_data_name, per_minitue_data)
+            #疲労度に関係のある指標を取得(基本はstrongBlinkIntervalAvgを使っている)
+            fatigue_relation_value = get_fatigue_relation_value(jins_meme_data_name, per_minitue_data)
 
-                fatigue_data_file_path = get_fatigue_data_path_old(per_minitue_data[0][0], rest_flag=rest_flag)
+            fatigue_data_file_path = get_fatigue_data_path_old(per_minitue_data[0][0], rest_flag=rest_flag)
 
-                #5分ごとに疲労度のデータ取得
-                if pass_time != 0 and pass_time % 5 == 0 and check_fatigue_data_file_path(fatigue_data_file_path):
-                    fatigue = get_fatigue_data(fatigue_data_file_path)
+            #5分ごとに疲労度のデータ取得
+            if pass_time != 0 and pass_time % 5 == 0 and check_fatigue_data_file_path(fatigue_data_file_path):
+                fatigue = get_fatigue_data(fatigue_data_file_path)
 
-                #1分ごとの経過時間・瞬目の間隔時間平均・疲労度のレコードを作成
-                date_blink_interval_time_fatigue_data.append([pass_time, fatigue_relation_value, fatigue])
+            #1分ごとの経過時間・瞬目の間隔時間平均・疲労度のレコードを作成
+            date_blink_interval_time_fatigue_data.append([pass_time, fatigue_relation_value, fatigue])
 
-                #デバッグ用関数
-                #start_debug(minute, pass_time, fatigue_data_file_path, fatigue)
+            #デバッグ用関数
+            #start_debug(minute, pass_time, fatigue_data_file_path, fatigue)
 
-                #瞬目の間隔時間平均の閾値を定める
-                if fatigue >= 3 and not threshold:
-                    threshold  = {'pass_time': pass_time, 'fatigue_relation_value': fatigue_relation_value}
+            #瞬目の間隔時間平均の閾値を定める
+            if fatigue >= 3 and not threshold:
+                threshold  = {'pass_time': pass_time, 'fatigue_relation_value': fatigue_relation_value}
                 
     return date_blink_interval_time_fatigue_data, threshold 
 
